@@ -9,16 +9,235 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      career_assessments: {
+        Row: {
+          created_at: string
+          id: string
+          interests: string[] | null
+          personality_type:
+            | Database["public"]["Enums"]["personality_type"]
+            | null
+          result: Json | null
+          skills: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interests?: string[] | null
+          personality_type?:
+            | Database["public"]["Enums"]["personality_type"]
+            | null
+          result?: Json | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interests?: string[] | null
+          personality_type?:
+            | Database["public"]["Enums"]["personality_type"]
+            | null
+          result?: Json | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_assessments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      career_path_colleges: {
+        Row: {
+          career_path_id: string
+          college_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          career_path_id: string
+          college_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          career_path_id?: string
+          college_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_path_colleges_career_path_id_fkey"
+            columns: ["career_path_id"]
+            isOneToOne: false
+            referencedRelation: "career_paths"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "career_path_colleges_college_id_fkey"
+            columns: ["college_id"]
+            isOneToOne: false
+            referencedRelation: "colleges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      career_paths: {
+        Row: {
+          created_at: string
+          description: string
+          exams: string[] | null
+          future_scope: string | null
+          id: string
+          required_skills: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          exams?: string[] | null
+          future_scope?: string | null
+          id?: string
+          required_skills?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          exams?: string[] | null
+          future_scope?: string | null
+          id?: string
+          required_skills?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_logs: {
+        Row: {
+          created_at: string
+          id: string
+          messages: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          messages: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          messages?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      colleges: {
+        Row: {
+          courses: string[] | null
+          created_at: string
+          cutoff: Json | null
+          fees: Json | null
+          id: string
+          location: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          courses?: string[] | null
+          created_at?: string
+          cutoff?: Json | null
+          fees?: Json | null
+          id?: string
+          location: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          courses?: string[] | null
+          created_at?: string
+          cutoff?: Json | null
+          fees?: Json | null
+          id?: string
+          location?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      user_has_role: {
+        Args: {
+          required_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      personality_type:
+        | "analytical"
+        | "creative"
+        | "social"
+        | "practical"
+        | "investigative"
+        | "artistic"
+        | "enterprising"
+        | "conventional"
+        | "realistic"
+      user_role: "student" | "counselor" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
