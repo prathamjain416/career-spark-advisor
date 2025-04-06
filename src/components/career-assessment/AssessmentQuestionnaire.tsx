@@ -18,6 +18,7 @@ interface AssessmentQuestionnaireProps {
   progressPercentage: number;
   isCompleted: boolean;
   handleStartOver: () => void;
+  assessmentType: string;
 }
 
 export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = ({
@@ -29,7 +30,8 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
   handlePrevious,
   progressPercentage,
   isCompleted,
-  handleStartOver
+  handleStartOver,
+  assessmentType
 }) => {
   if (isCompleted) {
     return (
@@ -38,7 +40,7 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
           <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
           <h3 className="text-2xl font-bold mb-2">Assessment Completed!</h3>
           <p className="text-muted-foreground mb-6">
-            Thank you for completing the assessment. Click below to view your results.
+            Thank you for completing the {assessmentType}. Click below to view your results.
           </p>
           <div className="flex justify-center gap-4">
             <Button variant="outline" onClick={handleStartOver}>
@@ -51,6 +53,19 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
               View Results
             </Button>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <Card className="text-center p-8">
+        <CardContent className="pt-6">
+          <h3 className="text-2xl font-bold mb-2">No Questions Available</h3>
+          <p className="text-muted-foreground mb-6">
+            There are no questions available for this assessment type at the moment.
+          </p>
         </CardContent>
       </Card>
     );
@@ -72,7 +87,7 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
           {questions[currentQuestionIndex].text}
         </CardTitle>
         <CardDescription>
-          Select the option that best describes you
+          {assessmentType}: Select the option that best describes you
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -4,7 +4,6 @@ import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import CareerAssessment from '@/components/CareerAssessment';
 import ChatInterface from '@/components/ChatInterface';
-import CareerSuggestions from '@/components/CareerSuggestions';
 
 const Index = () => {
   return (
@@ -14,7 +13,6 @@ const Index = () => {
         <Hero />
         <CareerAssessment />
         <ChatInterface />
-        <CareerSuggestions />
       </main>
       <footer className="py-6 bg-blue-50 border-t">
         <div className="container px-4 md:px-6">
