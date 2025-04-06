@@ -193,7 +193,10 @@ const CareerAssessment = () => {
                       <Button variant="outline" onClick={handleStartOver}>
                         Start Over
                       </Button>
-                      <Button onClick={() => document.querySelector('[data-value="results"]')?.click()}>
+                      <Button onClick={() => {
+                        const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
+                        if (resultsTab) resultsTab.click();
+                      }}>
                         View Results
                       </Button>
                     </div>
@@ -246,7 +249,10 @@ const CareerAssessment = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => document.querySelector('[data-value="questionnaire"]')?.click()}>
+                  <Button variant="outline" onClick={() => {
+                    const questionnaireTab = document.querySelector('[data-value="questionnaire"]') as HTMLElement;
+                    if (questionnaireTab) questionnaireTab.click();
+                  }}>
                     Review Assessment
                   </Button>
                   <Button onClick={() => document.getElementById('careers')?.scrollIntoView({ behavior: 'smooth' })}>
