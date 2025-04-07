@@ -47,6 +47,7 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
 }) => {
   const handleCheckboxChange = (id: string) => {
     setSelectedMultipleAnswers((prev) => {
+      // Type-safe implementation of the checkbox toggle logic
       if (prev.includes(id)) {
         return prev.filter((item) => item !== id);
       } else {

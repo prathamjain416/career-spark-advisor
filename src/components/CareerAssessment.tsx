@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { questions } from './career-assessment/questions';
@@ -6,10 +5,15 @@ import { AssessmentQuestionnaire } from './career-assessment/AssessmentQuestionn
 import { AssessmentResults } from './career-assessment/AssessmentResults';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { generateAssessmentResults } from './career-assessment/OpenAIService';
+
+type SingleAnswerType = string | { answer: string, otherText?: string };
+type MultipleAnswerType = string[] | { answers: string[], otherText?: string };
+type AnswerRecord = Record<number, string | SingleAnswerType | MultipleAnswerType>;
 
 const CareerAssessment = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string | string[] | {answer: string, otherText?: string}>>({});
+  const [answers, setAnswers] = useState<AnswerRecord>({});
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [selectedMultipleAnswers, setSelectedMultipleAnswers] = useState<string[]>([]);
   const [textAnswer, setTextAnswer] = useState('');
@@ -19,17 +23,14 @@ const CareerAssessment = () => {
   const [assessmentResults, setAssessmentResults] = useState<any>(null);
   const { toast } = useToast();
 
-  // Filter questions by the selected tier
   const tierQuestions = questions.filter(q => q.tier === selectedTier);
 
   const handleNext = () => {
     const currentQuestion = tierQuestions[currentQuestionIndex];
     
-    // Save the current answer based on question type
     if (currentQuestion.type === 'single') {
-      let answerData: string | {answer: string, otherText?: string} = selectedAnswer || '';
+      let answerData: SingleAnswerType = selectedAnswer || '';
       
-      // If "Other" is selected and there's text, save both
       if (selectedAnswer && 
           currentQuestion.options.find(o => o.id === selectedAnswer)?.text === "Other" && 
           textAnswer.trim()) {
@@ -42,9 +43,8 @@ const CareerAssessment = () => {
       setAnswers({ ...answers, [currentQuestion.id]: answerData });
     } 
     else if (currentQuestion.type === 'multiple') {
-      let answerData: string[] | {answers: string[], otherText?: string} = [...selectedMultipleAnswers];
+      let answerData: MultipleAnswerType = [...selectedMultipleAnswers];
       
-      // If "Other" is selected and there's text, save both
       const otherOption = currentQuestion.options.find(o => o.text === "Other");
       if (otherOption && selectedMultipleAnswers.includes(otherOption.id) && textAnswer.trim()) {
         answerData = {
@@ -59,11 +59,9 @@ const CareerAssessment = () => {
       setAnswers({ ...answers, [currentQuestion.id]: textAnswer });
     }
     
-    // Move to next question or complete assessment
     if (currentQuestionIndex < tierQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       
-      // Reset answers for next question
       const nextQuestion = tierQuestions[currentQuestionIndex + 1];
       
       if (nextQuestion.type === 'single') {
@@ -82,9 +80,9 @@ const CareerAssessment = () => {
       else if (nextQuestion.type === 'multiple') {
         const savedAnswer = answers[nextQuestion.id];
         if (Array.isArray(savedAnswer)) {
-          setSelectedMultipleAnswers(savedAnswer);
+          setSelectedMultipleAnswers([...savedAnswer]);
         } else if (savedAnswer && typeof savedAnswer === 'object' && 'answers' in savedAnswer) {
-          setSelectedMultipleAnswers(savedAnswer.answers);
+          setSelectedMultipleAnswers([...savedAnswer.answers]);
           setTextAnswer(savedAnswer.otherText || '');
         } else {
           setSelectedMultipleAnswers([]);
@@ -108,7 +106,6 @@ const CareerAssessment = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
       
-      // Restore previous answers
       const prevQuestion = tierQuestions[currentQuestionIndex - 1];
       
       if (prevQuestion.type === 'single') {
@@ -126,9 +123,9 @@ const CareerAssessment = () => {
       else if (prevQuestion.type === 'multiple') {
         const savedAnswer = answers[prevQuestion.id];
         if (Array.isArray(savedAnswer)) {
-          setSelectedMultipleAnswers(savedAnswer);
+          setSelectedMultipleAnswers([...savedAnswer]);
         } else if (savedAnswer && typeof savedAnswer === 'object' && 'answers' in savedAnswer) {
-          setSelectedMultipleAnswers(savedAnswer.answers);
+          setSelectedMultipleAnswers([...savedAnswer.answers]);
           setTextAnswer(savedAnswer.otherText || '');
         } else {
           setSelectedMultipleAnswers([]);
@@ -148,7 +145,6 @@ const CareerAssessment = () => {
     setIsGeneratingResults(true);
     
     try {
-      // Prepare the assessment data
       const formattedAnswers = Object.keys(answers).map(questionId => {
         const question = questions.find(q => q.id === parseInt(questionId));
         const answer = answers[parseInt(questionId)];
@@ -189,21 +185,11 @@ const CareerAssessment = () => {
         };
       });
       
-      // This is a placeholder - you would normally call your OpenAI-integrated API here
-      const response = await fetch('/api/generate-assessment-results', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assessmentType: selectedTier,
-          answers: formattedAnswers
-        })
-      }).catch(() => {
-        // If API call fails (since we don't have a real endpoint yet), use mock data
-        return { ok: false };
-      });
-
-      if (!response || !response.ok) {
-        // Use mock data since we don't have a real API endpoint yet
+      try {
+        const results = await generateAssessmentResults(selectedTier, formattedAnswers);
+        setAssessmentResults(results);
+      } catch (error) {
+        console.error('Error calling OpenAI service:', error);
         if (selectedTier === 'class10') {
           setAssessmentResults({
             recommendedStream: 'Science',
@@ -237,9 +223,6 @@ const CareerAssessment = () => {
             ]
           });
         }
-      } else {
-        const data = await response.json();
-        setAssessmentResults(data);
       }
       
     } catch (error) {
@@ -274,7 +257,7 @@ const CareerAssessment = () => {
         acc[parseInt(key)] = answers[parseInt(key)];
       }
       return acc;
-    }, {} as Record<number, string | string[] | {answer: string, otherText?: string}>);
+    }, {} as AnswerRecord);
     
     setCurrentQuestionIndex(0);
     setAnswers(filteredAnswers);
