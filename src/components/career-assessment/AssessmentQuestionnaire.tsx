@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -112,7 +112,6 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
   const isTextInput = currentQuestion.type === 'text';
   const isSingleChoice = currentQuestion.type === 'single';
 
-  // Check if the current question has valid responses
   const hasValidResponse = () => {
     if (isTextInput) {
       return textAnswer.trim() !== '';
@@ -151,7 +150,7 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
             className="min-h-[100px]"
           />
         ) : isMultipleChoice ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {currentQuestion.options.map((option) => (
               <div key={option.id} className="flex items-start space-x-2 rounded-md p-2 hover:bg-muted/50">
                 <Checkbox 
@@ -167,25 +166,12 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
                 </Label>
               </div>
             ))}
-            {currentQuestion.options.some(opt => opt.text === "Other") && (
-              <div className="mt-3 pl-6">
-                <Textarea
-                  placeholder="If you selected 'Other', please specify..."
-                  className="mt-1"
-                  value={textAnswer}
-                  onChange={(e) => setTextAnswer(e.target.value)}
-                  disabled={!selectedMultipleAnswers.includes(
-                    currentQuestion.options.find(opt => opt.text === "Other")?.id || ""
-                  )}
-                />
-              </div>
-            )}
           </div>
         ) : (
           <RadioGroup 
             value={selectedAnswer || ""} 
             onValueChange={setSelectedAnswer}
-            className="space-y-3"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
           >
             {currentQuestion.options.map((option) => (
               <div key={option.id} className="flex items-center space-x-2 rounded-md p-2 hover:bg-muted/50">
@@ -195,18 +181,33 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
                 </Label>
               </div>
             ))}
-            {currentQuestion.options.some(opt => opt.text === "Other") && selectedAnswer === 
-              currentQuestion.options.find(opt => opt.text === "Other")?.id && (
-              <div className="mt-3 pl-6">
-                <Textarea
-                  placeholder="Please specify..."
-                  className="mt-1"
-                  value={textAnswer}
-                  onChange={(e) => setTextAnswer(e.target.value)}
-                />
-              </div>
-            )}
           </RadioGroup>
+        )}
+        
+        {isMultipleChoice && currentQuestion.options.some(opt => opt.text === "Other") && (
+          <div className="mt-3 pl-6">
+            <Textarea
+              placeholder="If you selected 'Other', please specify..."
+              className="mt-1"
+              value={textAnswer}
+              onChange={(e) => setTextAnswer(e.target.value)}
+              disabled={!selectedMultipleAnswers.includes(
+                currentQuestion.options.find(opt => opt.text === "Other")?.id || ""
+              )}
+            />
+          </div>
+        )}
+        
+        {isSingleChoice && currentQuestion.options.some(opt => opt.text === "Other") && 
+          selectedAnswer === currentQuestion.options.find(opt => opt.text === "Other")?.id && (
+          <div className="mt-3 pl-6">
+            <Textarea
+              placeholder="Please specify..."
+              className="mt-1"
+              value={textAnswer}
+              onChange={(e) => setTextAnswer(e.target.value)}
+            />
+          </div>
         )}
       </CardContent>
       <CardFooter className="flex justify-between">
