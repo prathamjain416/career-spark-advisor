@@ -1,16 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Send, Bot, Trash, Sparkles } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from '@/integrations/supabase/client';
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -39,9 +33,8 @@ const ChatInterface = () => {
 
     try {
       // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('generate-assessment', {
+      const { data, error } = await supabase.functions.invoke('chat-with-counselor', {
         body: { 
-          assessmentType: 'chat', 
           prompt: inputMessage,
           context: messages.slice(-6).map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.content }))
         }
