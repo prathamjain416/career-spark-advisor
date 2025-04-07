@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +16,7 @@ interface AssessmentQuestionnaireProps {
   selectedMultipleAnswers: string[];
   textAnswer: string;
   setSelectedAnswer: (answer: string) => void;
-  setSelectedMultipleAnswers: (answers: string[]) => void;
+  setSelectedMultipleAnswers: (answers: string[] | ((prev: string[]) => string[])) => void;
   setTextAnswer: (text: string) => void;
   handleNext: () => void;
   handlePrevious: () => void;
@@ -46,7 +45,7 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
   isGeneratingResults
 }) => {
   const handleCheckboxChange = (id: string) => {
-    setSelectedMultipleAnswers((prev) => {
+    setSelectedMultipleAnswers((prev: string[]) => {
       // Type-safe implementation of the checkbox toggle logic
       if (prev.includes(id)) {
         return prev.filter((item) => item !== id);
