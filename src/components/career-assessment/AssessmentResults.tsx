@@ -2,19 +2,44 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, School, GraduationCap, Briefcase } from "lucide-react";
+import { BookOpen, School, GraduationCap, Briefcase, MapPin, Book } from "lucide-react";
 
 interface AssessmentResultsProps {
   onReviewAssessment: () => void;
   assessmentTier: 'class10' | 'class12';
-  answers: Record<number, string>;
+  answers: Record<number, any>;
+  results: any;
 }
 
 export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ 
   onReviewAssessment, 
   assessmentTier,
-  answers 
+  answers,
+  results
 }) => {
+  if (!results) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No Results Available</CardTitle>
+          <CardDescription>
+            Please complete the assessment to view your personalized results.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">
+              Your results will appear here after you complete the assessment questionnaire.
+            </p>
+            <Button onClick={onReviewAssessment}>
+              Go to Assessment
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -37,15 +62,15 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                 Recommended Stream
               </h3>
               <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                <div className="text-xl font-semibold text-blue-700">Science</div>
+                <div className="text-xl font-semibold text-blue-700">{results.recommendedStream}</div>
                 <div className="text-sm text-muted-foreground mt-1">
-                  Your analytical thinking and interest in problem-solving indicate a strong fit for Science stream.
+                  Your analytical thinking and interest in problem-solving indicate a strong fit for {results.recommendedStream} stream.
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
                   <div className="font-medium">Alternate Option</div>
-                  <div className="text-sm text-muted-foreground">Commerce</div>
+                  <div className="text-sm text-muted-foreground">{results.alternateStream}</div>
                 </div>
               </div>
             </div>
@@ -58,11 +83,11 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
               <div className="grid gap-2">
                 <div className="bg-emerald-50 p-3 rounded-lg">
                   <div className="font-medium">Core Subjects</div>
-                  <div className="text-sm text-muted-foreground">Physics, Chemistry, Mathematics, English</div>
+                  <div className="text-sm text-muted-foreground">{results.coreSubjects}</div>
                 </div>
                 <div className="bg-emerald-50/70 p-3 rounded-lg">
                   <div className="font-medium">Optional Subject Recommendations</div>
-                  <div className="text-sm text-muted-foreground">Computer Science or Biology, depending on your interests</div>
+                  <div className="text-sm text-muted-foreground">{results.optionalSubjects}</div>
                 </div>
               </div>
             </div>
@@ -76,9 +101,9 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                 Based on your learning style and goals, these boards might be suitable:
               </div>
               <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1">
-                <li>CBSE - Good for competitive exam preparation</li>
-                <li>ICSE - Strong focus on English and practical learning</li>
-                <li>State Board - If you plan to apply for state colleges</li>
+                {results.boardRecommendations?.map((recommendation: string, index: number) => (
+                  <li key={index}>{recommendation}</li>
+                ))}
               </ul>
             </div>
           </div>
@@ -90,18 +115,12 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                 Recommended Undergraduate Degrees
               </h3>
               <div className="grid gap-2">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <div className="font-medium">B.Tech Computer Science</div>
-                  <div className="text-sm text-muted-foreground">Strong match based on your interests in technology</div>
-                </div>
-                <div className="bg-blue-50/70 p-3 rounded-lg">
-                  <div className="font-medium">B.Sc Data Science</div>
-                  <div className="text-sm text-muted-foreground">Good option combining technology and analytics</div>
-                </div>
-                <div className="bg-blue-50/50 p-3 rounded-lg">
-                  <div className="font-medium">BCA (Bachelor of Computer Applications)</div>
-                  <div className="text-sm text-muted-foreground">Alternative option with more flexibility</div>
-                </div>
+                {results.recommendedDegrees?.map((degree: {name: string, description: string}, index: number) => (
+                  <div key={index} className={`bg-blue-50${index > 0 ? '/' + (70 - index * 20) : ''} p-3 rounded-lg`}>
+                    <div className="font-medium">{degree.name}</div>
+                    <div className="text-sm text-muted-foreground">{degree.description}</div>
+                  </div>
+                ))}
               </div>
             </div>
             
@@ -111,18 +130,12 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                 Top Career Paths
               </h3>
               <div className="grid gap-2">
-                <div className="bg-emerald-50 p-3 rounded-lg">
-                  <div className="font-medium">Software Development</div>
-                  <div className="text-sm text-muted-foreground">Building applications, websites, and systems</div>
-                </div>
-                <div className="bg-emerald-50/70 p-3 rounded-lg">
-                  <div className="font-medium">Data Science & Analytics</div>
-                  <div className="text-sm text-muted-foreground">Analyzing data to derive insights and make predictions</div>
-                </div>
-                <div className="bg-emerald-50/50 p-3 rounded-lg">
-                  <div className="font-medium">Cybersecurity</div>
-                  <div className="text-sm text-muted-foreground">Protecting systems and data from digital attacks</div>
-                </div>
+                {results.careerPaths?.map((career: {name: string, description: string}, index: number) => (
+                  <div key={index} className={`bg-emerald-50${index > 0 ? '/' + (70 - index * 20) : ''} p-3 rounded-lg`}>
+                    <div className="font-medium">{career.name}</div>
+                    <div className="text-sm text-muted-foreground">{career.description}</div>
+                  </div>
+                ))}
               </div>
             </div>
             
@@ -133,16 +146,15 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
               </h3>
               <div className="bg-amber-50 p-3 rounded-lg mb-2">
                 <div className="font-medium">Required Entrance Exams</div>
-                <div className="text-sm text-muted-foreground">JEE Main, CUET, MHT-CET (for Maharashtra)</div>
+                <div className="text-sm text-muted-foreground">{results.entranceExams}</div>
               </div>
               <div className="text-sm text-muted-foreground mb-1">
                 Preparation Tips:
               </div>
               <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1">
-                <li>Start JEE preparation at least 1-2 years before the exam</li>
-                <li>Focus on NCERT textbooks and standard reference books</li>
-                <li>Join a coaching program or use online resources</li>
-                <li>Practice with previous years' question papers</li>
+                {results.preparationTips?.map((tip: string, index: number) => (
+                  <li key={index}>{tip}</li>
+                ))}
               </ul>
             </div>
           </div>
