@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { questions } from './career-assessment/questions';
@@ -186,10 +187,28 @@ const CareerAssessment = () => {
       });
       
       try {
+        console.log('Calling generateAssessmentResults with:', selectedTier, formattedAnswers);
         const results = await generateAssessmentResults(selectedTier, formattedAnswers);
+        console.log('Results received:', results);
         setAssessmentResults(results);
+        
+        // Automatically switch to results tab after generating results
+        const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
+        if (resultsTab) resultsTab.click();
+        
+        toast({
+          title: "Assessment completed!",
+          description: "Your personalized results are ready to view.",
+        });
       } catch (error) {
         console.error('Error calling OpenAI service:', error);
+        toast({
+          title: "Error generating results",
+          description: "Using fallback data. You can still view your results.",
+          variant: "destructive"
+        });
+        
+        // Set fallback results
         if (selectedTier === 'class10') {
           setAssessmentResults({
             recommendedStream: 'Science',
@@ -223,8 +242,11 @@ const CareerAssessment = () => {
             ]
           });
         }
+        
+        // Automatically switch to results tab
+        const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
+        if (resultsTab) resultsTab.click();
       }
-      
     } catch (error) {
       console.error('Error generating results:', error);
       toast({
@@ -306,8 +328,8 @@ const CareerAssessment = () => {
           
           <Tabs defaultValue="questionnaire" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="questionnaire">Assessment</TabsTrigger>
-              <TabsTrigger value="results" disabled={!isCompleted}>Results</TabsTrigger>
+              <TabsTrigger value="questionnaire" data-value="questionnaire">Assessment</TabsTrigger>
+              <TabsTrigger value="results" data-value="results" disabled={!isCompleted}>Results</TabsTrigger>
             </TabsList>
             
             <TabsContent value="questionnaire">

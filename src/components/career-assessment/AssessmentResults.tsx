@@ -40,6 +40,15 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
     );
   }
 
+  const scrollToChatSection = () => {
+    const chatSection = document.getElementById('chat');
+    if (chatSection) {
+      chatSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      console.error("Chat section not found in the DOM");
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -164,7 +173,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
         <Button variant="outline" onClick={onReviewAssessment}>
           Review Assessment
         </Button>
-        <Button onClick={() => document.getElementById('chat')?.scrollIntoView({ behavior: 'smooth' })}>
+        <Button onClick={scrollToChatSection}>
           Chat with AI Counselor
         </Button>
       </CardFooter>
