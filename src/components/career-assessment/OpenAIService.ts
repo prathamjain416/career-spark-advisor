@@ -17,24 +17,33 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
     
     console.log('Received assessment results:', data);
     
-    // Save the results to Supabase
-    try {
-      const { error: saveError } = await supabase
-        .from('career_assessments')
-        .insert({
-          result: data,
-          personality_type: assessmentType === 'class10' ? data.recommendedStream : data.recommendedDegrees?.[0]?.name,
-          skills: assessmentType === 'class12' ? data.recommendedDegrees?.map((d: any) => d.name) : null,
-          interests: assessmentType === 'class12' ? data.careerPaths?.map((p: any) => p.name) : null
-        });
-      
-      if (saveError) {
-        console.error('Error saving assessment results:', saveError);
-      } else {
-        console.log('Assessment results saved to database');
+    // Get current user session
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    
+    if (userId) {
+      // Save the results to Supabase
+      try {
+        const { error: saveError } = await supabase
+          .from('career_assessments')
+          .insert({
+            user_id: userId,
+            result: data,
+            personality_type: assessmentType === 'class10' ? data.recommendedStream : data.recommendedDegrees?.[0]?.name,
+            skills: assessmentType === 'class12' ? data.recommendedDegrees?.map((d: any) => d.name) : null,
+            interests: assessmentType === 'class12' ? data.careerPaths?.map((p: any) => p.name) : null
+          });
+        
+        if (saveError) {
+          console.error('Error saving assessment results:', saveError);
+        } else {
+          console.log('Assessment results saved to database');
+        }
+      } catch (saveError) {
+        console.error('Error in saving results:', saveError);
       }
-    } catch (saveError) {
-      console.error('Error in saving results:', saveError);
+    } else {
+      console.log('User not logged in, assessment results will not be saved');
     }
     
     return data;

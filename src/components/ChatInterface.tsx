@@ -95,9 +95,18 @@ const ChatInterface = () => {
 
     setIsSaving(true);
     try {
+      // Get current user session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      
+      if (!userId) {
+        throw new Error("You must be logged in to save conversations.");
+      }
+
       const { error } = await supabase
         .from('chat_logs')
         .insert({
+          user_id: userId,
           messages: messages.map(m => ({
             content: m.content,
             sender: m.sender
