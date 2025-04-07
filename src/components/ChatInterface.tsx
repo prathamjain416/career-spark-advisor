@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Send, Bot, Trash, Sparkles } from "lucide-react";
+import { Send, Bot, Trash, Sparkles, Save } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,6 +13,7 @@ const ChatInterface = () => {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -81,6 +83,47 @@ const ChatInterface = () => {
     }
   };
 
+  const saveConversation = async () => {
+    if (messages.length <= 1) {
+      toast({
+        title: "Nothing to save",
+        description: "Please have a conversation before saving.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('chat_logs')
+        .insert({
+          messages: messages.map(m => ({
+            content: m.content,
+            sender: m.sender
+          }))
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Conversation saved",
+        description: "Your conversation has been saved for future reference.",
+      });
+    } catch (error) {
+      console.error("Error saving conversation:", error);
+      toast({
+        title: "Save failed",
+        description: "There was a problem saving your conversation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const clearChat = () => {
     setMessages([{ id: 1, content: "Hello! I'm your AI career counselor. How can I assist you with your career planning today?", sender: "ai" }]);
   };
@@ -103,9 +146,14 @@ const ChatInterface = () => {
                   <Bot className="h-5 w-5 text-blue-600" />
                   <CardTitle className="text-lg">AI Counselor</CardTitle>
                 </div>
-                <Button variant="ghost" size="icon" onClick={clearChat}>
-                  <Trash className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="icon" onClick={saveConversation} disabled={isSaving || messages.length <= 1}>
+                    <Save className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={clearChat}>
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <CardDescription>
                 Get personalized career advice and guidance
