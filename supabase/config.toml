@@ -1,1 +1,8 @@
-project_id = "dkyazgdsczgiceertjyq"
+
+project_id = "career-guidance-app"
+
+[functions.generate-assessment]
+verify_jwt = true
+
+[functions.chat-with-counselor]
+verify_jwt = true

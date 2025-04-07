@@ -5,6 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Send, Bot, Trash, Sparkles } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -32,43 +38,28 @@ const ChatInterface = () => {
     setIsLoading(true);
 
     try {
-      // In a real implementation, you would make an API call to OpenAI here
-      // For now, simulate a response after a delay
-      setTimeout(() => {
-        const aiResponses = [
-          "Based on your interests, you might want to explore careers in technology, particularly software development or data science.",
-          "Have you considered taking aptitude tests to better understand your strengths? I can guide you through some assessments.",
-          "For someone interested in healthcare, there are many paths besides medicine - like healthcare administration, public health, or medical research.",
-          "Engineering offers diverse specializations. Would you like to know more about computer, mechanical, or civil engineering?",
-          "Creative fields like design or digital marketing combine technical skills with creativity. These fields are growing rapidly.",
-          "If you're interested in the Science stream, focus on building a strong foundation in mathematics and physics. These subjects are crucial for many technical careers.",
-          "Commerce with mathematics opens up opportunities in finance, accounting, business analytics, and economics. Have you considered any of these fields?",
-          "For humanities students, developing strong communication and critical thinking skills is valuable for careers in law, journalism, psychology, and social work.",
-          "When preparing for entrance exams like JEE or NEET, consistent daily practice and regular mock tests are essential strategies for success."
-        ];
-        
-        // Check for keywords to provide more relevant responses
-        let response = "";
-        const query = inputMessage.toLowerCase();
-        
-        if (query.includes("engineering") || query.includes("jee")) {
-          response = "For engineering aspirants, JEE preparation requires strong fundamentals in Physics, Chemistry, and Mathematics. Focus on NCERT books first, then move to advanced reference materials. Would you like specific advice about a particular engineering field?";
-        } else if (query.includes("medical") || query.includes("neet") || query.includes("doctor")) {
-          response = "For a medical career, NEET preparation should focus on Biology, Physics, and Chemistry. Medical careers require dedication and many years of education, but offer rewarding opportunities to help others. Beyond being a doctor, you could explore research, public health, or specialized areas like radiology.";
-        } else if (query.includes("commerce") || query.includes("business") || query.includes("finance")) {
-          response = "Commerce offers diverse career paths in banking, finance, marketing, and entrepreneurship. If you enjoy mathematics, consider careers in chartered accountancy, financial analysis, or actuarial science. If you prefer people-oriented roles, marketing, HR, or business management might suit you better.";
-        } else if (query.includes("arts") || query.includes("humanities")) {
-          response = "Humanities graduates have versatile career options in fields like law, journalism, teaching, psychology, foreign services, and content creation. These careers value critical thinking, communication skills, and creativity. Many successful professionals in leadership roles come from humanities backgrounds.";
-        } else if (query.includes("computer") || query.includes("software") || query.includes("programming")) {
-          response = "Computer Science and IT careers are in high demand. Beyond coding, you could explore cybersecurity, AI/ML, data science, or UI/UX design. For these fields, building projects and practical skills alongside your degree will give you a competitive edge.";
-        } else {
-          response = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+      // Call the Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('generate-assessment', {
+        body: { 
+          assessmentType: 'chat', 
+          prompt: inputMessage,
+          context: messages.slice(-6).map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.content }))
         }
-        
-        const aiMessage = { id: messages.length + 2, content: response, sender: "ai" };
-        setMessages(prevMessages => [...prevMessages, aiMessage]);
-        setIsLoading(false);
-      }, 1500);
+      });
+      
+      if (error) {
+        console.error("Error calling AI service:", error);
+        throw new Error(error.message);
+      }
+      
+      // Use the response from OpenAI
+      const aiMessage = { 
+        id: messages.length + 2, 
+        content: data.message || "I'm sorry, I couldn't generate a response at this time. Please try again.", 
+        sender: "ai" 
+      };
+      
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
     } catch (error) {
       console.error("Error getting AI response:", error);
       toast({
@@ -76,6 +67,23 @@ const ChatInterface = () => {
         description: "Failed to get a response. Please try again later.",
         variant: "destructive"
       });
+      
+      // Fallback to predetermined responses
+      const aiResponses = [
+        "Based on your interests, you might want to explore careers in technology, particularly software development or data science.",
+        "Have you considered taking aptitude tests to better understand your strengths? I can guide you through some assessments.",
+        "For someone interested in healthcare, there are many paths besides medicine - like healthcare administration, public health, or medical research.",
+        "Engineering offers diverse specializations. Would you like to know more about computer, mechanical, or civil engineering?"
+      ];
+      
+      const aiMessage = { 
+        id: messages.length + 2, 
+        content: aiResponses[Math.floor(Math.random() * aiResponses.length)], 
+        sender: "ai" 
+      };
+      
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
+    } finally {
       setIsLoading(false);
     }
   };
