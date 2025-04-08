@@ -14,6 +14,7 @@ const ChatInterface = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -32,6 +33,7 @@ const ChatInterface = () => {
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setInputMessage("");
     setIsLoading(true);
+    setConnectionError(false);
 
     try {
       // Call the Supabase Edge Function
@@ -47,7 +49,7 @@ const ChatInterface = () => {
         throw new Error(error.message);
       }
       
-      // Use the response from OpenAI
+      // Use the response from the function
       const aiMessage = { 
         id: messages.length + 2, 
         content: data.message || "I'm sorry, I couldn't generate a response at this time. Please try again.", 
@@ -57,9 +59,11 @@ const ChatInterface = () => {
       setMessages(prevMessages => [...prevMessages, aiMessage]);
     } catch (error) {
       console.error("Error getting AI response:", error);
+      setConnectionError(true);
+      
       toast({
-        title: "Error",
-        description: "Failed to get a response. Please try again later.",
+        title: "Connection issue",
+        description: "Using offline mode. Your experience may be limited.",
         variant: "destructive"
       });
       
@@ -135,6 +139,7 @@ const ChatInterface = () => {
 
   const clearChat = () => {
     setMessages([{ id: 1, content: "Hello! I'm your AI career counselor. How can I assist you with your career planning today?", sender: "ai" }]);
+    setConnectionError(false);
   };
 
   return (
@@ -146,6 +151,11 @@ const ChatInterface = () => {
             <p className="text-muted-foreground">
               Ask questions about careers, entrance exams, or educational paths
             </p>
+            {connectionError && (
+              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-700">
+                Currently in offline mode. Some features may be limited.
+              </div>
+            )}
           </div>
           
           <Card className="border-2 shadow-md">

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,49 +44,40 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
 
   const scrollToChatSection = () => {
     try {
-      // First try to find the chat section by ID
       const chatSection = document.getElementById('chat');
       if (chatSection) {
         chatSection.scrollIntoView({ behavior: 'smooth' });
+        
+        // Add visual feedback
+        setTimeout(() => {
+          toast({
+            title: "Chat section available",
+            description: "You can now chat with our AI career counselor",
+          });
+          
+          // Add a subtle highlight effect to the chat section
+          chatSection.classList.add('ring-2', 'ring-blue-300');
+          setTimeout(() => {
+            chatSection.classList.remove('ring-2', 'ring-blue-300');
+          }, 2000);
+        }, 500);
+        
         return;
       }
       
-      // If not found by ID, try to find by section name or class
-      const sections = document.querySelectorAll('section');
-      for (const section of sections) {
-        if (section.id.toLowerCase().includes('chat') || 
-            section.className.toLowerCase().includes('chat')) {
-          section.scrollIntoView({ behavior: 'smooth' });
-          return;
-        }
-      }
-      
-      // If still not found, look for any element with chat in the ID or class
-      const chatElements = document.querySelectorAll('[id*="chat"], [class*="chat"]');
-      if (chatElements.length > 0) {
-        chatElements[0].scrollIntoView({ behavior: 'smooth' });
-        return;
-      }
-      
-      // Last resort: scroll to bottom of page
+      // Fallback to scrolling to the bottom if chat section not found
       window.scrollTo({
         top: document.body.scrollHeight,
         behavior: 'smooth'
       });
       
-      // Show toast message to help user
       toast({
-        title: "Chat section found",
-        description: "You can now chat with our AI career counselor",
+        title: "Scroll down for chat",
+        description: "The AI career counselor chat is at the bottom of the page",
       });
     } catch (error) {
       console.error("Error scrolling to chat section:", error);
-      // Fallback to manually scrolling down
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
-      
+      // Fallback to alert
       toast({
         title: "Please scroll down",
         description: "The AI career counselor chat is at the bottom of the page",
@@ -219,7 +209,10 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
         <Button variant="outline" onClick={onReviewAssessment}>
           Review Assessment
         </Button>
-        <Button onClick={scrollToChatSection} className="animate-pulse">
+        <Button 
+          onClick={scrollToChatSection} 
+          className="animate-pulse hover:animate-none bg-blue-600 hover:bg-blue-700 transition-all"
+        >
           Chat with AI Counselor
         </Button>
       </CardFooter>
