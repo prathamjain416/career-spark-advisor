@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, School, GraduationCap, Briefcase, MapPin, Book } from "lucide-react";
+import { BookOpen, School, GraduationCap, Briefcase, Book } from "lucide-react";
 
 interface AssessmentResultsProps {
   onReviewAssessment: () => void;
@@ -46,6 +45,15 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
       chatSection.scrollIntoView({ behavior: 'smooth' });
     } else {
       console.error("Chat section not found in the DOM");
+      const chatElements = document.querySelectorAll('[id*="chat"], [class*="chat"]');
+      if (chatElements.length > 0) {
+        chatElements[0].scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
     }
   };
 

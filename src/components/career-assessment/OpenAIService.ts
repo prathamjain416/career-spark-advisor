@@ -5,6 +5,14 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
   try {
     console.log('Sending to OpenAI:', { assessmentType, answers });
     
+    // Get current user session first to ensure we have a user
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    
+    if (!userId) {
+      console.log('User not logged in, proceeding without saving results');
+    }
+    
     // Call the Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('generate-assessment', {
       body: { assessmentType, answers }
@@ -17,12 +25,8 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
     
     console.log('Received assessment results:', data);
     
-    // Get current user session
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData?.session?.user?.id;
-    
+    // Save the results to Supabase if user is logged in
     if (userId) {
-      // Save the results to Supabase
       try {
         const { error: saveError } = await supabase
           .from('career_assessments')
@@ -42,15 +46,13 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
       } catch (saveError) {
         console.error('Error in saving results:', saveError);
       }
-    } else {
-      console.log('User not logged in, assessment results will not be saved');
     }
     
     return data;
   } catch (error) {
     console.error('Error in OpenAI service:', error);
     
-    // Return mock data as fallback
+    // Return mock data as fallback only if needed
     if (assessmentType === 'class10') {
       return {
         recommendedStream: 'Science',

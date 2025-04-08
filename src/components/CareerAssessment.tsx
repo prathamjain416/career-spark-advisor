@@ -146,12 +146,14 @@ const CareerAssessment = () => {
     setIsGeneratingResults(true);
     
     try {
+      // Format answers for the API
       const formattedAnswers = Object.keys(answers).map(questionId => {
         const question = questions.find(q => q.id === parseInt(questionId));
         const answer = answers[parseInt(questionId)];
         
         let formattedAnswer = '';
         
+        // Format different answer types
         if (typeof answer === 'string') {
           formattedAnswer = answer;
         } 
@@ -186,74 +188,96 @@ const CareerAssessment = () => {
         };
       });
       
-      try {
-        console.log('Calling generateAssessmentResults with:', selectedTier, formattedAnswers);
-        const results = await generateAssessmentResults(selectedTier, formattedAnswers);
-        console.log('Results received:', results);
-        setAssessmentResults(results);
-        
-        // Automatically switch to results tab after generating results
-        const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
-        if (resultsTab) resultsTab.click();
-        
+      // Filter answers to only include ones for the selected tier
+      const tierAnswers = formattedAnswers.filter(a => {
+        const question = questions.find(q => q.text === a.question);
+        return question?.tier === selectedTier;
+      });
+      
+      if (tierAnswers.length === 0) {
         toast({
-          title: "Assessment completed!",
-          description: "Your personalized results are ready to view.",
-        });
-      } catch (error) {
-        console.error('Error calling OpenAI service:', error);
-        toast({
-          title: "Error generating results",
-          description: "Using fallback data. You can still view your results.",
+          title: "No answers found",
+          description: "Please complete the assessment before generating results.",
           variant: "destructive"
         });
-        
-        // Set fallback results
-        if (selectedTier === 'class10') {
-          setAssessmentResults({
-            recommendedStream: 'Science',
-            alternateStream: 'Commerce',
-            coreSubjects: 'Physics, Chemistry, Mathematics, English',
-            optionalSubjects: 'Computer Science or Biology',
-            boardRecommendations: [
-              'CBSE - Good for competitive exam preparation',
-              'ICSE - Strong focus on English and practical learning',
-              'State Board - If you plan to apply for state colleges'
-            ]
-          });
-        } else {
-          setAssessmentResults({
-            recommendedDegrees: [
-              { name: 'B.Tech Computer Science', description: 'Strong match based on your interests in technology' },
-              { name: 'B.Sc Data Science', description: 'Good option combining technology and analytics' },
-              { name: 'BCA (Bachelor of Computer Applications)', description: 'Alternative option with more flexibility' }
-            ],
-            careerPaths: [
-              { name: 'Software Development', description: 'Building applications, websites, and systems' },
-              { name: 'Data Science & Analytics', description: 'Analyzing data to derive insights and make predictions' },
-              { name: 'Cybersecurity', description: 'Protecting systems and data from digital attacks' }
-            ],
-            entranceExams: 'JEE Main, CUET, MHT-CET (for Maharashtra)',
-            preparationTips: [
-              'Start JEE preparation at least 1-2 years before the exam',
-              'Focus on NCERT textbooks and standard reference books',
-              'Join a coaching program or use online resources',
-              'Practice with previous years\' question papers'
-            ]
-          });
-        }
-        
-        // Automatically switch to results tab
-        const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
-        if (resultsTab) resultsTab.click();
+        setIsGeneratingResults(false);
+        return;
       }
+      
+      console.log('Calling generateAssessmentResults with:', selectedTier, tierAnswers);
+      
+      // Call the OpenAI service
+      const results = await generateAssessmentResults(selectedTier, tierAnswers);
+      console.log('Results received:', results);
+      
+      if (!results) {
+        throw new Error("No results received from assessment service");
+      }
+      
+      setAssessmentResults(results);
+      
+      // Automatically switch to results tab after generating results
+      const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
+      if (resultsTab) {
+        setTimeout(() => {
+          resultsTab.click();
+        }, 300);
+      }
+      
+      toast({
+        title: "Assessment completed!",
+        description: "Your personalized results are ready to view.",
+      });
     } catch (error) {
       console.error('Error generating results:', error);
       toast({
         title: "Error generating results",
-        description: "There was a problem analyzing your responses. Please try again later.",
+        description: "Using fallback data. You can still view your results.",
         variant: "destructive"
       });
+      
+      // Set fallback results
+      if (selectedTier === 'class10') {
+        setAssessmentResults({
+          recommendedStream: 'Science',
+          alternateStream: 'Commerce',
+          coreSubjects: 'Physics, Chemistry, Mathematics, English',
+          optionalSubjects: 'Computer Science or Biology',
+          boardRecommendations: [
+            'CBSE - Good for competitive exam preparation',
+            'ICSE - Strong focus on English and practical learning',
+            'State Board - If you plan to apply for state colleges'
+          ]
+        });
+      } else {
+        setAssessmentResults({
+          recommendedDegrees: [
+            { name: 'B.Tech Computer Science', description: 'Strong match based on your interests in technology' },
+            { name: 'B.Sc Data Science', description: 'Good option combining technology and analytics' },
+            { name: 'BCA (Bachelor of Computer Applications)', description: 'Alternative option with more flexibility' }
+          ],
+          careerPaths: [
+            { name: 'Software Development', description: 'Building applications, websites, and systems' },
+            { name: 'Data Science & Analytics', description: 'Analyzing data to derive insights and make predictions' },
+            { name: 'Cybersecurity', description: 'Protecting systems and data from digital attacks' }
+          ],
+          entranceExams: 'JEE Main, CUET, MHT-CET (for Maharashtra)',
+          preparationTips: [
+            'Start JEE preparation at least 1-2 years before the exam',
+            'Focus on NCERT textbooks and standard reference books',
+            'Join a coaching program or use online resources',
+            'Practice with previous years\' question papers'
+          ]
+        });
+      }
+      
+      // Automatically switch to results tab
+      const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
+      if (resultsTab) {
+        setTimeout(() => {
+          resultsTab.click();
+        }, 300);
+      }
     } finally {
       setIsGeneratingResults(false);
     }
@@ -329,7 +353,7 @@ const CareerAssessment = () => {
           <Tabs defaultValue="questionnaire" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="questionnaire" data-value="questionnaire">Assessment</TabsTrigger>
-              <TabsTrigger value="results" data-value="results" disabled={!isCompleted}>Results</TabsTrigger>
+              <TabsTrigger value="results" data-value="results" disabled={!isCompleted && !assessmentResults}>Results</TabsTrigger>
             </TabsList>
             
             <TabsContent value="questionnaire">
