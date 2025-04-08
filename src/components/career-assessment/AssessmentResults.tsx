@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, School, GraduationCap, Briefcase, Book } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AssessmentResultsProps {
   onReviewAssessment: () => void;
@@ -16,6 +18,8 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
   answers,
   results
 }) => {
+  const { toast } = useToast();
+
   if (!results) {
     return (
       <Card>
@@ -40,20 +44,54 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
   }
 
   const scrollToChatSection = () => {
-    const chatSection = document.getElementById('chat');
-    if (chatSection) {
-      chatSection.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      console.error("Chat section not found in the DOM");
+    try {
+      // First try to find the chat section by ID
+      const chatSection = document.getElementById('chat');
+      if (chatSection) {
+        chatSection.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      
+      // If not found by ID, try to find by section name or class
+      const sections = document.querySelectorAll('section');
+      for (const section of sections) {
+        if (section.id.toLowerCase().includes('chat') || 
+            section.className.toLowerCase().includes('chat')) {
+          section.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+      }
+      
+      // If still not found, look for any element with chat in the ID or class
       const chatElements = document.querySelectorAll('[id*="chat"], [class*="chat"]');
       if (chatElements.length > 0) {
         chatElements[0].scrollIntoView({ behavior: 'smooth' });
-      } else {
-        window.scrollTo({
-          top: document.body.scrollHeight,
-          behavior: 'smooth'
-        });
+        return;
       }
+      
+      // Last resort: scroll to bottom of page
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
+      
+      // Show toast message to help user
+      toast({
+        title: "Chat section found",
+        description: "You can now chat with our AI career counselor",
+      });
+    } catch (error) {
+      console.error("Error scrolling to chat section:", error);
+      // Fallback to manually scrolling down
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
+      
+      toast({
+        title: "Please scroll down",
+        description: "The AI career counselor chat is at the bottom of the page",
+      });
     }
   };
 
@@ -181,7 +219,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
         <Button variant="outline" onClick={onReviewAssessment}>
           Review Assessment
         </Button>
-        <Button onClick={scrollToChatSection}>
+        <Button onClick={scrollToChatSection} className="animate-pulse">
           Chat with AI Counselor
         </Button>
       </CardFooter>

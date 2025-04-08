@@ -28,12 +28,54 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
     // Save the results to Supabase if user is logged in
     if (userId) {
       try {
+        // For Class 10, personality_type must be a valid enum value
+        // Convert the recommendedStream to a valid personality_type enum
+        let personalityType = null;
+        
+        // Map the stream to a valid personality_type enum value
+        if (assessmentType === 'class10') {
+          const streamToPersonalityMap: Record<string, string> = {
+            'Science': 'analytical',
+            'Commerce': 'enterprising',
+            'Arts': 'artistic',
+            'Humanities': 'social'
+          };
+          
+          personalityType = streamToPersonalityMap[data.recommendedStream] || 'analytical';
+        } else {
+          // For class12, use the first career path or degree as the personality type
+          const careerOrDegree = data.recommendedDegrees?.[0]?.name || 'analytical';
+          
+          // Map common career paths to personality types
+          const careerToPersonalityMap: Record<string, string> = {
+            'Computer Science': 'analytical',
+            'Engineering': 'analytical',
+            'Business': 'enterprising',
+            'Finance': 'conventional',
+            'Arts': 'artistic',
+            'Design': 'artistic',
+            'Psychology': 'social',
+            'Medical': 'investigative',
+            'Law': 'enterprising'
+          };
+          
+          // Find a matching personality type based on keywords in the career/degree name
+          let matchedPersonality = 'analytical'; // Default
+          Object.entries(careerToPersonalityMap).forEach(([career, personality]) => {
+            if (careerOrDegree.includes(career)) {
+              matchedPersonality = personality;
+            }
+          });
+          
+          personalityType = matchedPersonality;
+        }
+        
         const { error: saveError } = await supabase
           .from('career_assessments')
           .insert({
             user_id: userId,
             result: data,
-            personality_type: assessmentType === 'class10' ? data.recommendedStream : data.recommendedDegrees?.[0]?.name,
+            personality_type: personalityType,
             skills: assessmentType === 'class12' ? data.recommendedDegrees?.map((d: any) => d.name) : null,
             interests: assessmentType === 'class12' ? data.careerPaths?.map((p: any) => p.name) : null
           });
