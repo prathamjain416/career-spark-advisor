@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { OpenAI } from "https://esm.sh/openai@4.20.1";
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.9.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,62 +17,64 @@ serve(async (req) => {
     const { prompt, context } = await req.json();
     
     // Check if API key is available
-    const apiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!apiKey || apiKey.includes('sk-proj-')) {
-      console.log("Invalid or missing OpenAI API key. Using fallback response.");
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
+      console.log("Invalid or missing Gemini API key. Using fallback response.");
       return generateFallbackResponse(prompt, context, corsHeaders);
     }
 
-    const openai = new OpenAI({
-      apiKey: apiKey
-    });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Build the messages array for the API call
+    // Prepare the conversation history
     const messages = [
       {
         role: "system",
-        content: `You are an expert career counselor for high school and college students in India. 
+        parts: [{text: `You are an expert career counselor for high school and college students in India. 
         Provide specific, actionable guidance about education, careers, entrance exams, and academic paths.
         Keep responses concise (maximum 3-4 paragraphs) but informative, focusing on practical advice for Indian students.
         Include specific entrance exam names, college options in India, and career paths available in the Indian context when relevant.
-        Always provide comprehensive and thorough responses to ensure the user gets valuable guidance.`
+        Always provide comprehensive and thorough responses to ensure the user gets valuable guidance.`}]
       }
     ];
 
     // Add conversation context if provided
     if (context && Array.isArray(context)) {
-      messages.push(...context);
+      messages.push(...context.map(msg => ({
+        role: msg.role,
+        parts: [{text: msg.content}]
+      })));
     }
 
     // Add the current user prompt
     messages.push({
       role: "user",
-      content: prompt
+      parts: [{text: prompt}]
     });
 
-    console.log("Sending to OpenAI:", messages);
+    console.log("Sending to Gemini:", messages);
 
-    // Call OpenAI API
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages,
-      temperature: 0.7,
-      max_tokens: 600,  // Increased token limit for more detailed responses
+    // Call Gemini API
+    const result = await model.generateContent({
+      contents: messages,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 600
+      }
     });
 
-    console.log("Received response from OpenAI");
-    const aiResponseText = response.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
+    const aiResponseText = result.response.text() || "I'm sorry, I couldn't generate a response.";
 
     return new Response(JSON.stringify({ message: aiResponseText }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error("Error:", error);
-    return generateFallbackResponse(req.json?.prompt || "Help me with career advice", req.json?.context || [], corsHeaders);
+    return generateFallbackResponse(prompt, context, corsHeaders);
   }
 });
 
-// Function to generate fallback responses when OpenAI API is unavailable
+// Function to generate fallback responses when Gemini API is unavailable
 function generateFallbackResponse(prompt, context, corsHeaders) {
   console.log("Generating fallback response for prompt:", prompt);
   
