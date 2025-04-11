@@ -33,6 +33,12 @@ const CareerAssessment = () => {
   useEffect(() => {
     if (assessmentResults) {
       setActiveTab('results');
+      setTimeout(() => {
+        const chatSection = document.getElementById('chat');
+        if (chatSection) {
+          chatSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 1000);
     }
   }, [assessmentResults]);
 
@@ -230,13 +236,13 @@ const CareerAssessment = () => {
       
       toast({
         title: "Assessment completed!",
-        description: "Your personalized results are ready to view.",
+        description: "Your results have been shared with the AI Counselor chat below.",
       });
     } catch (error) {
       console.error('Error generating results:', error);
       toast({
         title: "Error generating results",
-        description: "Using fallback data. You can still view your results.",
+        description: "Your results have been shared with the AI Counselor using fallback data.",
         variant: "destructive"
       });
       
@@ -316,22 +322,6 @@ const CareerAssessment = () => {
     setActiveTab('questionnaire');
   };
 
-  const handleShareToChat = () => {
-    try {
-      const chatSection = document.getElementById('chat');
-      if (chatSection) {
-        toast({
-          title: "Assessment results shared",
-          description: "Your results have been shared with the AI Counselor chat.",
-        });
-        
-        chatSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    } catch (error) {
-      console.error("Error sharing to chat:", error);
-    }
-  };
-
   return (
     <section id="assessment" className="py-12 bg-blue-50">
       <div className="container px-4 md:px-6">
@@ -369,7 +359,7 @@ const CareerAssessment = () => {
               <TabsTrigger 
                 value="results" 
                 data-value="results" 
-                disabled={!isCompleted && !assessmentResults}
+                disabled={!assessmentResults}
               >
                 Results
               </TabsTrigger>

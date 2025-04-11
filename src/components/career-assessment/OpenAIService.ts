@@ -91,13 +91,17 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
       }
     }
     
+    // Share results with chat
+    shareResultsWithChat(data, assessmentType);
+    
     return data;
   } catch (error) {
     console.error('Error in AI service:', error);
     
     // Return mock data as fallback only if needed
+    let fallbackData;
     if (assessmentType === 'class10') {
-      return {
+      fallbackData = {
         recommendedStream: 'Arts/Humanities',
         alternateStream: 'Commerce',
         coreSubjects: 'History, Political Science, Sociology, English',
@@ -109,7 +113,7 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
         ]
       };
     } else {
-      return {
+      fallbackData = {
         recommendedDegrees: [
           { name: 'B.A. in Psychology', description: 'Understand human behavior and mental processes' },
           { name: 'B.A. in Mass Communication', description: 'Learn media production and journalism skills' },
@@ -129,5 +133,58 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
         ]
       };
     }
+    
+    // Share fallback results with chat
+    shareResultsWithChat(fallbackData, assessmentType);
+    
+    return fallbackData;
   }
 };
+
+// Function to share results with chat
+function shareResultsWithChat(results: any, assessmentType: 'class10' | 'class12') {
+  try {
+    const chatSection = document.getElementById('chat');
+    
+    // Format the results as a message
+    let resultSummary = "";
+    
+    if (assessmentType === 'class10') {
+      resultSummary = `Based on my assessment, my recommended stream is ${results.recommendedStream} with core subjects in ${results.coreSubjects}. Can you tell me more about career options related to this stream?`;
+    } else {
+      const degrees = results.recommendedDegrees?.map((d: any) => d.name).join(', ');
+      const careers = results.careerPaths?.map((c: any) => c.name).join(', ');
+      resultSummary = `My assessment suggests these degrees: ${degrees} and career paths: ${careers}. Can you provide more information about these options?`;
+    }
+    
+    // Find the input field in the chat section
+    const inputField = chatSection?.querySelector('input');
+    if (inputField) {
+      // Set the value of the input field
+      (inputField as HTMLInputElement).value = resultSummary;
+      (inputField as HTMLInputElement).focus();
+      
+      // Automatically trigger the send button (optional)
+      const sendButton = chatSection?.querySelector('button[type="submit"]');
+      if (sendButton) {
+        setTimeout(() => {
+          sendButton.click();
+        }, 500);
+      }
+    }
+    
+    // Scroll to the chat section
+    if (chatSection) {
+      setTimeout(() => {
+        chatSection.scrollIntoView({ behavior: 'smooth' });
+      }, 700);
+    }
+  } catch (error) {
+    console.error("Error sharing results with chat:", error);
+    // Just scroll to chat as fallback
+    const chatSection = document.getElementById('chat');
+    if (chatSection) {
+      chatSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+}
