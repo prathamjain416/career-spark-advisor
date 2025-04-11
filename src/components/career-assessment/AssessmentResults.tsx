@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,29 +20,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
 }) => {
   const { toast } = useToast();
 
-  if (!results) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No Results Available</CardTitle>
-          <CardDescription>
-            Please complete the assessment to view your personalized results.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">
-              Your results will appear here after you complete the assessment questionnaire.
-            </p>
-            <Button onClick={onReviewAssessment}>
-              Go to Assessment
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // This function scrolls to the chat section when "Chat with AI Counselor" is clicked
   const scrollToChatSection = () => {
     try {
       const chatSection = document.getElementById('chat');
@@ -85,6 +64,31 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
     }
   };
 
+  // If there are no results, show a prompt to complete the assessment
+  if (!results) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No Results Available</CardTitle>
+          <CardDescription>
+            Please complete the assessment to view your personalized results.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">
+              Your results will appear here after you complete the assessment questionnaire.
+            </p>
+            <Button onClick={onReviewAssessment}>
+              Go to Assessment
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // When results are available, display them based on the assessment tier
   return (
     <Card>
       <CardHeader>

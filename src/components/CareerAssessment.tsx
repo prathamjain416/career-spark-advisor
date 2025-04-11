@@ -22,9 +22,15 @@ const CareerAssessment = () => {
   const [selectedTier, setSelectedTier] = useState<'class10' | 'class12'>('class10');
   const [isGeneratingResults, setIsGeneratingResults] = useState(false);
   const [assessmentResults, setAssessmentResults] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('questionnaire');
   const { toast } = useToast();
 
   const tierQuestions = questions.filter(q => q.tier === selectedTier);
+
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
   const handleNext = () => {
     const currentQuestion = tierQuestions[currentQuestionIndex];
@@ -206,7 +212,7 @@ const CareerAssessment = () => {
       
       console.log('Calling generateAssessmentResults with:', selectedTier, tierAnswers);
       
-      // Call the OpenAI service
+      // Call the service
       const results = await generateAssessmentResults(selectedTier, tierAnswers);
       console.log('Results received:', results);
       
@@ -216,13 +222,8 @@ const CareerAssessment = () => {
       
       setAssessmentResults(results);
       
-      // Automatically switch to results tab after generating results
-      const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
-      if (resultsTab) {
-        setTimeout(() => {
-          resultsTab.click();
-        }, 300);
-      }
+      // Switch to results tab after generating results
+      setActiveTab('results');
       
       toast({
         title: "Assessment completed!",
@@ -271,13 +272,8 @@ const CareerAssessment = () => {
         });
       }
       
-      // Automatically switch to results tab
-      const resultsTab = document.querySelector('[data-value="results"]') as HTMLElement;
-      if (resultsTab) {
-        setTimeout(() => {
-          resultsTab.click();
-        }, 300);
-      }
+      // Switch to results tab
+      setActiveTab('results');
     } finally {
       setIsGeneratingResults(false);
     }
@@ -312,11 +308,11 @@ const CareerAssessment = () => {
     setTextAnswer('');
     setIsCompleted(false);
     setAssessmentResults(null);
+    setActiveTab('questionnaire');
   };
 
   const handleReviewAssessment = () => {
-    const questionnaireTab = document.querySelector('[data-value="questionnaire"]') as HTMLElement;
-    if (questionnaireTab) questionnaireTab.click();
+    setActiveTab('questionnaire');
   };
 
   return (
@@ -350,10 +346,16 @@ const CareerAssessment = () => {
             </div>
           </div>
           
-          <Tabs defaultValue="questionnaire" className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="questionnaire" data-value="questionnaire">Assessment</TabsTrigger>
-              <TabsTrigger value="results" data-value="results" disabled={!isCompleted && !assessmentResults}>Results</TabsTrigger>
+              <TabsTrigger 
+                value="results" 
+                data-value="results" 
+                disabled={!isCompleted && !assessmentResults}
+              >
+                Results
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="questionnaire">
