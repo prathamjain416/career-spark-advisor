@@ -9,13 +9,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
-    { id: 1, content: "Hello! I'm your AI career counselor. How can I assist you with your career planning today?", sender: "ai" }
+    { id: 1, content: "Hello! I'm your AI career counselor. How can I assist you with your career planning today? You can ask me about your assessment results or any career-related questions.", sender: "ai" }
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -23,6 +24,21 @@ const ChatInterface = () => {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
+  
+  // Effect to check if input value has been set externally (from assessment results)
+  useEffect(() => {
+    const checkExternalInput = () => {
+      if (inputRef.current && inputRef.current.value && inputRef.current.value !== inputMessage) {
+        setInputMessage(inputRef.current.value);
+      }
+    };
+    
+    // Check immediately and then periodically
+    checkExternalInput();
+    const intervalId = setInterval(checkExternalInput, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [inputMessage]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +52,31 @@ const ChatInterface = () => {
     setConnectionError(false);
 
     try {
+      // Special handling for assessment result sharing
+      if (inputMessage.includes("Based on my assessment") || inputMessage.includes("My assessment suggests")) {
+        // Let the AI know that the user is sharing assessment results
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate server delay
+        
+        const aiResponse = `Thank you for sharing your assessment results! I'd be happy to discuss them further.
+        
+What specific aspects of ${inputMessage.includes("stream is") ? "your recommended stream" : "these career options"} would you like to know more about? For example, I can provide information about:
+- Career prospects and job roles
+- Skills required for success
+- Educational pathways
+- Industry trends
+- Day-to-day responsibilities`;
+        
+        const aiMessage = { 
+          id: messages.length + 2, 
+          content: aiResponse, 
+          sender: "ai" 
+        };
+        
+        setMessages(prevMessages => [...prevMessages, aiMessage]);
+        setIsLoading(false);
+        return;
+      }
+      
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('chat-with-counselor', {
         body: { 
@@ -138,7 +179,7 @@ const ChatInterface = () => {
   };
 
   const clearChat = () => {
-    setMessages([{ id: 1, content: "Hello! I'm your AI career counselor. How can I assist you with your career planning today?", sender: "ai" }]);
+    setMessages([{ id: 1, content: "Hello! I'm your AI career counselor. How can I assist you with your career planning today? You can ask me about your assessment results or any career-related questions.", sender: "ai" }]);
     setConnectionError(false);
   };
 
@@ -225,6 +266,7 @@ const ChatInterface = () => {
               <div className="border-t p-4">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                   <Input
+                    ref={inputRef}
                     placeholder="Ask about career options, exams, or educational paths..."
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}

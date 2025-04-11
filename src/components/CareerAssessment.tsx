@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { questions } from './career-assessment/questions';
 import { AssessmentQuestionnaire } from './career-assessment/AssessmentQuestionnaire';
@@ -27,10 +26,15 @@ const CareerAssessment = () => {
 
   const tierQuestions = questions.filter(q => q.tier === selectedTier);
 
-  // Handle tab change
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
+
+  useEffect(() => {
+    if (assessmentResults) {
+      setActiveTab('results');
+    }
+  }, [assessmentResults]);
 
   const handleNext = () => {
     const currentQuestion = tierQuestions[currentQuestionIndex];
@@ -150,16 +154,18 @@ const CareerAssessment = () => {
 
   const generateResults = async () => {
     setIsGeneratingResults(true);
+    toast({
+      title: "Generating results",
+      description: "Please wait while we analyze your responses...",
+    });
     
     try {
-      // Format answers for the API
       const formattedAnswers = Object.keys(answers).map(questionId => {
         const question = questions.find(q => q.id === parseInt(questionId));
         const answer = answers[parseInt(questionId)];
         
         let formattedAnswer = '';
         
-        // Format different answer types
         if (typeof answer === 'string') {
           formattedAnswer = answer;
         } 
@@ -194,7 +200,6 @@ const CareerAssessment = () => {
         };
       });
       
-      // Filter answers to only include ones for the selected tier
       const tierAnswers = formattedAnswers.filter(a => {
         const question = questions.find(q => q.text === a.question);
         return question?.tier === selectedTier;
@@ -212,7 +217,6 @@ const CareerAssessment = () => {
       
       console.log('Calling generateAssessmentResults with:', selectedTier, tierAnswers);
       
-      // Call the service
       const results = await generateAssessmentResults(selectedTier, tierAnswers);
       console.log('Results received:', results);
       
@@ -222,7 +226,6 @@ const CareerAssessment = () => {
       
       setAssessmentResults(results);
       
-      // Switch to results tab after generating results
       setActiveTab('results');
       
       toast({
@@ -237,42 +240,40 @@ const CareerAssessment = () => {
         variant: "destructive"
       });
       
-      // Set fallback results
       if (selectedTier === 'class10') {
         setAssessmentResults({
-          recommendedStream: 'Science',
+          recommendedStream: 'Arts/Humanities',
           alternateStream: 'Commerce',
-          coreSubjects: 'Physics, Chemistry, Mathematics, English',
-          optionalSubjects: 'Computer Science or Biology',
+          coreSubjects: 'History, Political Science, Sociology, English',
+          optionalSubjects: 'Psychology or Economics',
           boardRecommendations: [
-            'CBSE - Good for competitive exam preparation',
-            'ICSE - Strong focus on English and practical learning',
-            'State Board - If you plan to apply for state colleges'
+            'CBSE - Well-rounded curriculum with focus on conceptual understanding',
+            'ICSE - Strong focus on English and humanities subjects',
+            'State Board - If you plan to apply for state colleges with arts specialization'
           ]
         });
       } else {
         setAssessmentResults({
           recommendedDegrees: [
-            { name: 'B.Tech Computer Science', description: 'Strong match based on your interests in technology' },
-            { name: 'B.Sc Data Science', description: 'Good option combining technology and analytics' },
-            { name: 'BCA (Bachelor of Computer Applications)', description: 'Alternative option with more flexibility' }
+            { name: 'B.A. in Psychology', description: 'Understand human behavior and mental processes' },
+            { name: 'B.A. in Mass Communication', description: 'Learn media production and journalism skills' },
+            { name: 'B.A. in Economics', description: 'Study market trends and economic theories' }
           ],
           careerPaths: [
-            { name: 'Software Development', description: 'Building applications, websites, and systems' },
-            { name: 'Data Science & Analytics', description: 'Analyzing data to derive insights and make predictions' },
-            { name: 'Cybersecurity', description: 'Protecting systems and data from digital attacks' }
+            { name: 'Counseling Psychology', description: 'Help people overcome personal challenges' },
+            { name: 'Content Creation', description: 'Create engaging content for digital platforms' },
+            { name: 'Social Work', description: 'Support communities and individuals in need' }
           ],
-          entranceExams: 'JEE Main, CUET, MHT-CET (for Maharashtra)',
+          entranceExams: 'CUET, IPUCET, Symbiosis SET',
           preparationTips: [
-            'Start JEE preparation at least 1-2 years before the exam',
-            'Focus on NCERT textbooks and standard reference books',
-            'Join a coaching program or use online resources',
-            'Practice with previous years\' question papers'
+            'Focus on building a strong portfolio of your work',
+            'Develop communication and interpersonal skills',
+            'Read widely to build your knowledge base',
+            'Participate in relevant volunteer work or internships'
           ]
         });
       }
       
-      // Switch to results tab
       setActiveTab('results');
     } finally {
       setIsGeneratingResults(false);
@@ -313,6 +314,22 @@ const CareerAssessment = () => {
 
   const handleReviewAssessment = () => {
     setActiveTab('questionnaire');
+  };
+
+  const handleShareToChat = () => {
+    try {
+      const chatSection = document.getElementById('chat');
+      if (chatSection) {
+        toast({
+          title: "Assessment results shared",
+          description: "Your results have been shared with the AI Counselor chat.",
+        });
+        
+        chatSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (error) {
+      console.error("Error sharing to chat:", error);
+    }
   };
 
   return (

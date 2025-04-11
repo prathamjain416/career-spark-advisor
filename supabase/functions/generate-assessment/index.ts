@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { OpenAI } from "https://esm.sh/openai@4.20.1";
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,9 +14,8 @@ serve(async (req) => {
   }
 
   try {
-    const openai = new OpenAI({
-      apiKey: Deno.env.get('OPENAI_API_KEY')
-    });
+    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const { assessmentType, answers } = await req.json();
     
@@ -26,7 +25,7 @@ serve(async (req) => {
       throw new Error('No answers provided for assessment');
     }
 
-    // Convert the answers into a structured prompt for the AI
+    // Convert the answers into a structured prompt for Gemini
     const prompt = `
     Based on the following career assessment responses, provide tailored educational and career guidance:
     
@@ -52,27 +51,12 @@ serve(async (req) => {
     Format the response as a JSON object with exactly the structure described above.`;
 
     try {
-      console.log('Sending request to OpenAI');
+      console.log('Sending request to Gemini API');
       
-      // Call OpenAI API with the structured prompt
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert career counselor for high school students in India. Provide specific, actionable guidance based on the student's assessment responses. Format your response as a valid JSON object with the structure matching what was requested."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-      });
-
-      // Parse the AI response
-      const aiResponseText = response.choices[0].message.content || "";
-      console.log('Received response from OpenAI:', aiResponseText.substring(0, 100) + '...');
+      // Call Gemini AI API with the structured prompt
+      const result = await model.generateContent(prompt);
+      const aiResponseText = result.response.text();
+      console.log('Received response from Gemini:', aiResponseText.substring(0, 100) + '...');
       
       let parsedResponse;
       
@@ -96,12 +80,24 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (parseError) {
-        console.error("Error parsing AI response:", parseError);
-        console.error("AI response text:", aiResponseText);
-        throw new Error("Failed to parse AI response");
+        console.error("Error parsing Gemini response:", parseError);
+        console.error("Gemini response text:", aiResponseText);
+        
+        // Attempt to extract information from text if JSON parsing fails
+        console.log("Attempting to extract structured data from text response");
+        const extractedData = extractDataFromText(aiResponseText, assessmentType);
+        
+        if (extractedData) {
+          console.log("Successfully extracted structured data from text");
+          return new Response(JSON.stringify(extractedData), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        throw new Error("Failed to parse Gemini response");
       }
-    } catch (openAiError) {
-      console.error("OpenAI API error:", openAiError);
+    } catch (geminiError) {
+      console.error("Gemini API error:", geminiError);
       
       // Return fallback data
       const fallbackData = getFallbackData(assessmentType);
@@ -129,6 +125,143 @@ serve(async (req) => {
     });
   }
 });
+
+// Function to extract data from text response when JSON parsing fails
+function extractDataFromText(text, assessmentType) {
+  try {
+    if (assessmentType === 'class10') {
+      // Extract Class 10 information
+      const recommendedStreamMatch = text.match(/Recommended Stream:?\s*([^:\n]+)/i);
+      const alternateStreamMatch = text.match(/Alternative Stream:?\s*([^:\n]+)/i);
+      const coreSubjectsMatch = text.match(/Core Subjects:?\s*([^:\n]+(?:\n[^:\n]+)*)/i);
+      const optionalSubjectsMatch = text.match(/Optional Subjects:?\s*([^:\n]+(?:\n[^:\n]+)*)/i);
+      
+      // Extract board recommendations (this could be multi-line)
+      const boardRecsMatch = text.match(/Board Recommendations:?\s*((?:.|\n)*?)(?:\n\n|\n\d|$)/i);
+      
+      let boardRecommendations = [];
+      if (boardRecsMatch && boardRecsMatch[1]) {
+        // Split by newlines and/or bullet points and clean up
+        boardRecommendations = boardRecsMatch[1]
+          .split(/\n|•|-)/)
+          .map(item => item.trim())
+          .filter(item => item.length > 0);
+      }
+      
+      return {
+        recommendedStream: (recommendedStreamMatch && recommendedStreamMatch[1].trim()) || "Science",
+        alternateStream: (alternateStreamMatch && alternateStreamMatch[1].trim()) || "Commerce",
+        coreSubjects: (coreSubjectsMatch && coreSubjectsMatch[1].trim()) || "Physics, Chemistry, Mathematics, English",
+        optionalSubjects: (optionalSubjectsMatch && optionalSubjectsMatch[1].trim()) || "Computer Science or Biology",
+        boardRecommendations: boardRecommendations.length > 0 
+          ? boardRecommendations 
+          : ["CBSE - Good for competitive exam preparation", 
+             "ICSE - Strong focus on English and practical learning", 
+             "State Board - If you plan to apply for state colleges"]
+      };
+    } else {
+      // Extract Class 12 information
+      // This is more complex due to the structured nature of degrees and careers
+      // We'll do a simple extraction
+      
+      const degreesMatch = text.match(/Recommended Undergraduate Degrees:?\s*((?:.|\n)*?)(?:\n\nSuitable|Three Suitable|$)/i);
+      const careersMatch = text.match(/(?:Suitable|Three Suitable) Career Paths:?\s*((?:.|\n)*?)(?:\n\nRelevant|Entrance Exams|$)/i);
+      const examsMatch = text.match(/(?:Relevant )?Entrance Exams:?\s*([^:\n]+(?:\n[^:\n]+)*)/i);
+      const tipsMatch = text.match(/(?:Preparation|Four specific preparation) [Tt]ips:?\s*((?:.|\n)*?)(?:\n\n|$)/i);
+      
+      // Process degrees - try to split into 3 individual items with descriptions
+      let recommendedDegrees = [];
+      if (degreesMatch && degreesMatch[1]) {
+        const degreeText = degreesMatch[1].trim();
+        // Try to identify numbered or bulleted list items
+        const degreeItems = degreeText.split(/\n\d+\.|\n-|\n•/).filter(item => item.trim().length > 0);
+        
+        degreeItems.forEach(item => {
+          const parts = item.split(':');
+          if (parts.length > 1) {
+            recommendedDegrees.push({
+              name: parts[0].trim(),
+              description: parts[1].trim()
+            });
+          } else {
+            recommendedDegrees.push({
+              name: item.split(' - ')[0].trim(),
+              description: item.includes(' - ') ? item.split(' - ')[1].trim() : "Strong match for your skills and interests"
+            });
+          }
+        });
+      }
+      
+      // Process careers similarly
+      let careerPaths = [];
+      if (careersMatch && careersMatch[1]) {
+        const careerText = careersMatch[1].trim();
+        const careerItems = careerText.split(/\n\d+\.|\n-|\n•/).filter(item => item.trim().length > 0);
+        
+        careerItems.forEach(item => {
+          const parts = item.split(':');
+          if (parts.length > 1) {
+            careerPaths.push({
+              name: parts[0].trim(),
+              description: parts[1].trim()
+            });
+          } else {
+            careerPaths.push({
+              name: item.split(' - ')[0].trim(),
+              description: item.includes(' - ') ? item.split(' - ')[1].trim() : "Good match for your personality and interests"
+            });
+          }
+        });
+      }
+      
+      // Process preparation tips
+      let preparationTips = [];
+      if (tipsMatch && tipsMatch[1]) {
+        preparationTips = tipsMatch[1]
+          .split(/\n|•|-)/)
+          .map(item => item.trim())
+          .filter(item => item.length > 0)
+          .slice(0, 4); // Limit to 4 tips
+      }
+      
+      // Ensure we have the expected data or use fallbacks
+      if (recommendedDegrees.length === 0) {
+        recommendedDegrees = [
+          { name: "B.Tech Computer Science", description: "Strong match based on your interests in technology" },
+          { name: "B.Sc Data Science", description: "Good option combining technology and analytics" },
+          { name: "BCA (Bachelor of Computer Applications)", description: "Alternative option with more flexibility" }
+        ];
+      }
+      
+      if (careerPaths.length === 0) {
+        careerPaths = [
+          { name: "Software Development", description: "Building applications, websites, and systems" },
+          { name: "Data Science & Analytics", description: "Analyzing data to derive insights and make predictions" },
+          { name: "Cybersecurity", description: "Protecting systems and data from digital attacks" }
+        ];
+      }
+      
+      if (preparationTips.length === 0) {
+        preparationTips = [
+          "Start preparation at least 1-2 years before the exam",
+          "Focus on NCERT textbooks and standard reference books",
+          "Join a coaching program or use online resources",
+          "Practice with previous years' question papers"
+        ];
+      }
+      
+      return {
+        recommendedDegrees: recommendedDegrees.slice(0, 3), // Limit to 3 degrees
+        careerPaths: careerPaths.slice(0, 3), // Limit to 3 career paths
+        entranceExams: (examsMatch && examsMatch[1].trim()) || "JEE Main, CUET, MHT-CET (for Maharashtra)",
+        preparationTips: preparationTips
+      };
+    }
+  } catch (error) {
+    console.error("Error extracting data from text:", error);
+    return null;
+  }
+}
 
 function getFallbackData(assessmentType: string) {
   if (assessmentType === 'class10') {

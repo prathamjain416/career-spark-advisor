@@ -1,9 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from "@/components/ui/use-toast";
 
 export const generateAssessmentResults = async (assessmentType: 'class10' | 'class12', answers: any[]) => {
   try {
-    console.log('Sending to OpenAI:', { assessmentType, answers });
+    console.log('Sending to AI service:', { assessmentType, answers });
     
     // Get current user session first to ensure we have a user
     const { data: sessionData } = await supabase.auth.getSession();
@@ -19,7 +20,7 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
     });
     
     if (error) {
-      console.error('Error calling OpenAI service:', error);
+      console.error('Error calling AI service:', error);
       throw new Error(error.message);
     }
     
@@ -92,39 +93,39 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
     
     return data;
   } catch (error) {
-    console.error('Error in OpenAI service:', error);
+    console.error('Error in AI service:', error);
     
     // Return mock data as fallback only if needed
     if (assessmentType === 'class10') {
       return {
-        recommendedStream: 'Science',
+        recommendedStream: 'Arts/Humanities',
         alternateStream: 'Commerce',
-        coreSubjects: 'Physics, Chemistry, Mathematics, English',
-        optionalSubjects: 'Computer Science or Biology',
+        coreSubjects: 'History, Political Science, Sociology, English',
+        optionalSubjects: 'Psychology or Economics',
         boardRecommendations: [
-          'CBSE - Good for competitive exam preparation',
-          'ICSE - Strong focus on English and practical learning',
-          'State Board - If you plan to apply for state colleges'
+          'CBSE - Well-rounded curriculum with focus on conceptual understanding',
+          'ICSE - Strong focus on English and humanities subjects',
+          'State Board - If you plan to apply for state colleges with arts specialization'
         ]
       };
     } else {
       return {
         recommendedDegrees: [
-          { name: 'B.Tech Computer Science', description: 'Strong match based on your interests in technology' },
-          { name: 'B.Sc Data Science', description: 'Good option combining technology and analytics' },
-          { name: 'BCA (Bachelor of Computer Applications)', description: 'Alternative option with more flexibility' }
+          { name: 'B.A. in Psychology', description: 'Understand human behavior and mental processes' },
+          { name: 'B.A. in Mass Communication', description: 'Learn media production and journalism skills' },
+          { name: 'B.A. in Economics', description: 'Study market trends and economic theories' }
         ],
         careerPaths: [
-          { name: 'Software Development', description: 'Building applications, websites, and systems' },
-          { name: 'Data Science & Analytics', description: 'Analyzing data to derive insights and make predictions' },
-          { name: 'Cybersecurity', description: 'Protecting systems and data from digital attacks' }
+          { name: 'Counseling Psychology', description: 'Help people overcome personal challenges' },
+          { name: 'Content Creation', description: 'Create engaging content for digital platforms' },
+          { name: 'Social Work', description: 'Support communities and individuals in need' }
         ],
-        entranceExams: 'JEE Main, CUET, MHT-CET (for Maharashtra)',
+        entranceExams: 'CUET, IPUCET, Symbiosis SET',
         preparationTips: [
-          'Start JEE preparation at least 1-2 years before the exam',
-          'Focus on NCERT textbooks and standard reference books',
-          'Join a coaching program or use online resources',
-          'Practice with previous years\' question papers'
+          'Focus on building a strong portfolio of your work',
+          'Develop communication and interpersonal skills',
+          'Read widely to build your knowledge base',
+          'Participate in relevant volunteer work or internships'
         ]
       };
     }

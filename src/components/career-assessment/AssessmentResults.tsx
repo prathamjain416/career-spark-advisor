@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, School, GraduationCap, Briefcase, Book } from "lucide-react";
+import { BookOpen, School, GraduationCap, Briefcase, Book, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface AssessmentResultsProps {
@@ -31,7 +31,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
         setTimeout(() => {
           toast({
             title: "Chat section available",
-            description: "You can now chat with our AI career counselor",
+            description: "You can now chat with our AI career counselor about your results",
           });
           
           // Add a subtle highlight effect to the chat section
@@ -64,6 +64,45 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
     }
   };
 
+  // Share results with chat
+  const shareResultsWithChat = () => {
+    try {
+      const chatSection = document.getElementById('chat');
+      
+      // Format the results as a message
+      let resultSummary = "";
+      
+      if (assessmentTier === 'class10') {
+        resultSummary = `Based on my assessment, my recommended stream is ${results.recommendedStream} with core subjects in ${results.coreSubjects}. Can you tell me more about career options related to this stream?`;
+      } else {
+        const degrees = results.recommendedDegrees.map((d: any) => d.name).join(', ');
+        const careers = results.careerPaths.map((c: any) => c.name).join(', ');
+        resultSummary = `My assessment suggests these degrees: ${degrees} and career paths: ${careers}. Can you provide more information about these options?`;
+      }
+      
+      // Find the input field in the chat section
+      const inputField = chatSection?.querySelector('input');
+      if (inputField) {
+        // Set the value of the input field
+        (inputField as HTMLInputElement).value = resultSummary;
+        (inputField as HTMLInputElement).focus();
+      }
+      
+      // Scroll to the chat section
+      if (chatSection) {
+        chatSection.scrollIntoView({ behavior: 'smooth' });
+        
+        toast({
+          title: "Results shared with chat",
+          description: "Your assessment results have been added to the chat. Press send to discuss with the AI counselor.",
+        });
+      }
+    } catch (error) {
+      console.error("Error sharing results with chat:", error);
+      scrollToChatSection(); // Fallback to just scrolling
+    }
+  };
+
   // If there are no results, show a prompt to complete the assessment
   if (!results) {
     return (
@@ -90,9 +129,9 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
 
   // When results are available, display them based on the assessment tier
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
+    <Card className="shadow-md border-2">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+        <CardTitle className="text-xl">
           {assessmentTier === 'class10' ? 'Class 10 Stream Selector Results' : 'Class 12 Career Path Results'}
         </CardTitle>
         <CardDescription>
@@ -102,7 +141,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
           }
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {assessmentTier === 'class10' ? (
           <div className="space-y-6">
             <div>
@@ -113,7 +152,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
               <div className="bg-blue-50 p-4 rounded-lg mb-4">
                 <div className="text-xl font-semibold text-blue-700">{results.recommendedStream}</div>
                 <div className="text-sm text-muted-foreground mt-1">
-                  Your analytical thinking and interest in problem-solving indicate a strong fit for {results.recommendedStream} stream.
+                  Your interests and learning style indicate a strong fit for {results.recommendedStream} stream.
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -209,16 +248,26 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row justify-between gap-3">
+      <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-3 pb-4 border-t bg-gray-50">
         <Button variant="outline" onClick={onReviewAssessment}>
           Review Assessment
         </Button>
-        <Button 
-          onClick={scrollToChatSection} 
-          className="animate-pulse hover:animate-none bg-blue-600 hover:bg-blue-700 transition-all"
-        >
-          Chat with AI Counselor
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={shareResultsWithChat} 
+            className="flex items-center gap-1"
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span>Share to Chat</span>
+          </Button>
+          <Button 
+            onClick={scrollToChatSection} 
+            className="bg-blue-600 hover:bg-blue-700 transition-all"
+          >
+            Chat with AI Counselor
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
