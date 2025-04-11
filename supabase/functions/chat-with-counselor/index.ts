@@ -35,11 +35,11 @@ serve(async (req) => {
       history: [
         {
           role: "user",
-          parts: [{ text: "You are an expert career counselor for high school and college students in India. Provide specific, actionable guidance about education, careers, entrance exams, and academic paths. Keep responses concise (maximum 3-4 paragraphs) but informative, focusing on practical advice for Indian students." }]
+          parts: [{ text: "You are an expert career counselor for high school and college students in India. Provide specific, actionable guidance about education, careers, entrance exams, and academic paths. Keep responses concise (maximum 3-4 paragraphs) but informative, focusing on practical advice for Indian students. Structure your responses using Markdown for headings, bullet points, and emphasis when appropriate." }]
         },
         {
           role: "model",
-          parts: [{ text: "I understand my role as an expert career counselor for Indian students. I'll provide concise, specific, and actionable guidance on education paths, careers, entrance exams, and academic choices relevant to the Indian context. My responses will be informative yet compact (3-4 paragraphs maximum), focusing on practical advice that students can implement. I'm ready to help with any career-related questions you have." }]
+          parts: [{ text: "I understand my role as an expert career counselor for Indian students. I'll provide concise, specific, and actionable guidance on education paths, careers, entrance exams, and academic choices relevant to the Indian context. My responses will be informative yet compact (3-4 paragraphs maximum), focusing on practical advice that students can implement. I'll use Markdown formatting to structure my responses with headings, bullet points, and emphasis when appropriate. I'm ready to help with any career-related questions you have." }]
         }
       ]
     });
@@ -74,19 +74,19 @@ serve(async (req) => {
 function generateFallbackResponse(prompt, corsHeaders) {
   console.log("Generating fallback response for prompt:", prompt);
   
-  // Array of pre-defined career guidance responses
+  // Array of pre-defined career guidance responses in Markdown format
   const fallbackResponses = [
-    "Based on your interests, engineering might be a great path for you. Top engineering entrance exams in India include JEE Main, JEE Advanced, and BITSAT. I recommend starting preparation at least 1-2 years in advance with NCERT books as your foundation.",
+    "## Engineering Pathways\n\nBased on your interests, engineering might be a great path for you. Top engineering entrance exams in India include:\n- **JEE Main** - For NITs, IIITs, and GFTIs\n- **JEE Advanced** - For IITs\n- **BITSAT** - For BITS Pilani campuses\n\nI recommend starting preparation at least 1-2 years in advance with NCERT books as your foundation.",
     
-    "For medical aspirants, NEET-UG is the primary entrance exam in India. Besides MBBS, you might consider BDS, BAMS, or allied health sciences. For preparation, focus on NCERT textbooks and solve previous years' papers.",
+    "## Medical Career Options\n\nFor medical aspirants, **NEET-UG** is the primary entrance exam in India. Besides MBBS, you might consider:\n- BDS (Bachelor of Dental Surgery)\n- BAMS (Ayurveda)\n- Allied health sciences\n\nFor preparation, focus on NCERT textbooks and solve previous years' papers.",
     
-    "Commerce offers diverse career paths like CA, CS, CMA, or MBA. For CA, register with ICAI and prepare for foundation exams. For MBA, aim for CAT, XAT, or NMAT after graduation. DU, SRCC, and Christ University offer excellent BCom programs.",
+    "## Commerce & Business Pathways\n\nCommerce offers diverse career paths like:\n- **CA** - Register with ICAI and prepare for foundation exams\n- **CS** or **CMA** - Professional certifications\n- **MBA** - Aim for CAT, XAT, or NMAT after graduation\n\nTop colleges: DU, SRCC, and Christ University offer excellent BCom programs.",
     
-    "If you're interested in humanities or social sciences, consider DU, JNU, or Ashoka University. Prepare for CUET for admission to central universities. Career options include civil services (prepare for UPSC), law (take CLAT), journalism, or psychology.",
+    "## Humanities & Social Sciences\n\nIf you're interested in humanities or social sciences, consider these universities:\n- **Delhi University (DU)**\n- **JNU**\n- **Ashoka University**\n\nPrepare for CUET for admission to central universities. Career options include:\n- Civil services (UPSC)\n- Law (CLAT)\n- Journalism\n- Psychology",
     
-    "For computer science careers, focus on building practical skills alongside your degree. Consider BTech CSE (through JEE), BCA, or BSc Computer Science programs. Develop coding skills through platforms like Coursera, edX, or Codecademy.",
+    "## Computer Science & IT\n\nFor computer science careers, focus on building practical skills alongside your degree. Consider:\n- **BTech CSE** (through JEE)\n- **BCA** or **BSc Computer Science** programs\n\n### Skill Development\nDevelop coding skills through platforms like:\n- Coursera\n- edX\n- Codecademy",
     
-    "When choosing a stream after 10th, consider your interests and aptitude rather than peer pressure. Science opens doors to engineering, medicine, and research; Commerce to business, finance, and economics; Arts to law, civil services, and creative fields."
+    "## Choosing Your Stream (After 10th)\n\nWhen choosing a stream after 10th, consider your interests and aptitude rather than peer pressure.\n\n### Options:\n- **Science** - Opens doors to engineering, medicine, and research\n- **Commerce** - Pathways to business, finance, and economics\n- **Arts** - Leads to law, civil services, and creative fields\n\nRemember, your stream choice influences but doesn't completely determine your career options."
   ];
   
   // Simple keyword matching to attempt to provide relevant responses

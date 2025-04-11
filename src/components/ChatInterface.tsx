@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Send, Bot, Trash, Sparkles, Save } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import ReactMarkdown from 'react-markdown';
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -26,7 +26,6 @@ const ChatInterface = () => {
     }
   }, [messages]);
   
-  // Effect to check if input value has been set externally (from assessment results)
   useEffect(() => {
     const checkExternalInput = () => {
       if (inputRef.current && inputRef.current.value && inputRef.current.value !== inputMessage) {
@@ -34,7 +33,6 @@ const ChatInterface = () => {
       }
     };
     
-    // Check immediately and then periodically
     checkExternalInput();
     const intervalId = setInterval(checkExternalInput, 1000);
     
@@ -45,132 +43,105 @@ const ChatInterface = () => {
     e.preventDefault();
     if (inputMessage.trim() === "") return;
 
-    // Add user message
     const userMessage = { id: messages.length + 1, content: inputMessage, sender: "user" };
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setInputMessage("");
     setIsLoading(true);
 
-    try {
-      // Special handling for assessment result sharing
-      if (inputMessage.includes("Based on my assessment") || inputMessage.includes("My assessment suggests")) {
-        // Let the AI know that the user is sharing assessment results
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate server delay
-        
-        const aiResponse = `Thank you for sharing your assessment results! I'd be happy to discuss them further.
-        
+    if (inputMessage.includes("Based on my assessment") || inputMessage.includes("My assessment suggests")) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const aiResponse = `Thank you for sharing your assessment results! I'd be happy to discuss them further.
+      
 What specific aspects of ${inputMessage.includes("stream is") ? "your recommended stream" : "these career options"} would you like to know more about? For example, I can provide information about:
 - Career prospects and job roles
 - Skills required for success
 - Educational pathways
 - Industry trends
 - Day-to-day responsibilities`;
-        
-        const aiMessage = { 
-          id: messages.length + 2, 
-          content: aiResponse, 
-          sender: "ai" 
-        };
-        
-        setMessages(prevMessages => [...prevMessages, aiMessage]);
-        setIsLoading(false);
-        setConnectionError(false); // Reset error state on success
-        setRetryCount(0); // Reset retry counter
-        return;
-      }
-      
-      // Call the Supabase Edge Function with timeout and retry logic
-      const callWithTimeout = async (attempt: number = 1) => {
-        try {
-          // Set a timeout for the function call
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Request timed out")), 10000)
-          );
-          
-          const functionPromise = supabase.functions.invoke('chat-with-counselor', {
-            body: { 
-              prompt: inputMessage,
-              context: messages.slice(-4).map(m => ({ role: m.sender === 'user' ? 'user' : 'model', content: m.content }))
-            }
-          });
-          
-          // Race the function call against the timeout
-          const { data, error } = await Promise.race([functionPromise, timeoutPromise]) as any;
-          
-          if (error) {
-            throw error;
-          }
-          
-          // Use the response from the function
-          const aiMessage = { 
-            id: messages.length + 2, 
-            content: data.message || "I'm sorry, I couldn't generate a response at this time. Please try again.", 
-            sender: "ai" 
-          };
-          
-          setMessages(prevMessages => [...prevMessages, aiMessage]);
-          setConnectionError(false); // Reset error state on success
-          setRetryCount(0); // Reset retry counter
-          
-        } catch (error) {
-          console.error(`Attempt ${attempt} failed:`, error);
-          
-          // If we haven't exceeded max retries, try again
-          if (attempt < 2) {
-            console.log(`Retrying... (${attempt + 1}/2)`);
-            toast({
-              title: "Connection issue",
-              description: "Retrying connection...",
-              duration: 2000,
-            });
-            return callWithTimeout(attempt + 1);
-          }
-          
-          // If we've exhausted retries, handle the error
-          setConnectionError(true);
-          setRetryCount(prev => prev + 1);
-          
-          toast({
-            title: "Connection issue",
-            description: "Using offline mode. Your experience may be limited.",
-            variant: "destructive"
-          });
-          
-          // Fallback to predetermined responses
-          const aiResponses = [
-            "Based on your interests, you might want to explore careers in technology, particularly software development or data science.",
-            "Have you considered taking aptitude tests to better understand your strengths? I can guide you through some assessments.",
-            "For someone interested in healthcare, there are many paths besides medicine - like healthcare administration, public health, or medical research.",
-            "Engineering offers diverse specializations. Would you like to know more about computer, mechanical, or civil engineering?"
-          ];
-          
-          const aiMessage = { 
-            id: messages.length + 2, 
-            content: aiResponses[Math.floor(Math.random() * aiResponses.length)], 
-            sender: "ai" 
-          };
-          
-          setMessages(prevMessages => [...prevMessages, aiMessage]);
-        }
-      };
-      
-      await callWithTimeout();
-      
-    } catch (error) {
-      console.error("Unexpected error in chat handling:", error);
-      // This catch block handles any errors not caught in the retry logic
-      setConnectionError(true);
       
       const aiMessage = { 
         id: messages.length + 2, 
-        content: "I'm experiencing technical difficulties. Please try again later or check your connection.", 
+        content: aiResponse, 
         sender: "ai" 
       };
       
       setMessages(prevMessages => [...prevMessages, aiMessage]);
-    } finally {
       setIsLoading(false);
+      setConnectionError(false);
+      setRetryCount(0);
+      return;
     }
+
+    const callWithTimeout = async (attempt: number = 1) => {
+      try {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Request timed out")), 10000)
+        );
+        
+        const functionPromise = supabase.functions.invoke('chat-with-counselor', {
+          body: { 
+            prompt: inputMessage,
+            context: messages.slice(-4).map(m => ({ role: m.sender === 'user' ? 'user' : 'model', content: m.content }))
+          }
+        });
+        
+        const { data, error } = await Promise.race([functionPromise, timeoutPromise]) as any;
+        
+        if (error) {
+          throw error;
+        }
+        
+        const aiMessage = { 
+          id: messages.length + 2, 
+          content: data.message || "I'm sorry, I couldn't generate a response at this time. Please try again.", 
+          sender: "ai" 
+        };
+        
+        setMessages(prevMessages => [...prevMessages, aiMessage]);
+        setConnectionError(false);
+        setRetryCount(0);
+        
+      } catch (error) {
+        console.error(`Attempt ${attempt} failed:`, error);
+        
+        if (attempt < 2) {
+          console.log(`Retrying... (${attempt + 1}/2)`);
+          toast({
+            title: "Connection issue",
+            description: "Retrying connection...",
+            duration: 2000,
+          });
+          return callWithTimeout(attempt + 1);
+        }
+        
+        setConnectionError(true);
+        setRetryCount(prev => prev + 1);
+        
+        toast({
+          title: "Connection issue",
+          description: "Using offline mode. Your experience may be limited.",
+          variant: "destructive"
+        });
+        
+        const aiResponses = [
+          "Based on your interests, you might want to explore careers in technology, particularly software development or data science.",
+          "Have you considered taking aptitude tests to better understand your strengths? I can guide you through some assessments.",
+          "For someone interested in healthcare, there are many paths besides medicine - like healthcare administration, public health, or medical research.",
+          "Engineering offers diverse specializations. Would you like to know more about computer, mechanical, or civil engineering?"
+        ];
+        
+        const aiMessage = { 
+          id: messages.length + 2, 
+          content: aiResponses[Math.floor(Math.random() * aiResponses.length)], 
+          sender: "ai" 
+        };
+        
+        setMessages(prevMessages => [...prevMessages, aiMessage]);
+      }
+    };
+    
+    await callWithTimeout();
   };
 
   const saveConversation = async () => {
@@ -185,7 +156,6 @@ What specific aspects of ${inputMessage.includes("stream is") ? "your recommende
 
     setIsSaving(true);
     try {
-      // Get current user session
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData?.session?.user?.id;
       
@@ -229,7 +199,6 @@ What specific aspects of ${inputMessage.includes("stream is") ? "your recommende
     setRetryCount(0);
   };
 
-  // Show different UI states based on connection status
   const getConnectionStatus = () => {
     if (connectionError) {
       if (retryCount > 2) {
@@ -312,7 +281,15 @@ What specific aspects of ${inputMessage.includes("stream is") ? "your recommende
                         <span className="text-xs font-medium">AI Counselor</span>
                       </div>
                     )}
-                    <div className="whitespace-pre-wrap">{message.content}</div>
+                    <div className="whitespace-pre-wrap">
+                      {message.sender === 'ai' ? (
+                        <ReactMarkdown className="prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-blue-600 prose-li:my-0 prose-p:my-1 prose-ul:pl-6 prose-ul:my-1">
+                          {message.content}
+                        </ReactMarkdown>
+                      ) : (
+                        message.content
+                      )}
+                    </div>
                   </div>
                 ))}
                 {isLoading && (
