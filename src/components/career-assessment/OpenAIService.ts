@@ -168,7 +168,8 @@ function shareResultsWithChat(results: any, assessmentType: 'class10' | 'class12
       const sendButton = chatSection?.querySelector('button[type="submit"]');
       if (sendButton) {
         setTimeout(() => {
-          sendButton.click();
+          // Fix: Properly typecast the element to HTMLElement before calling click()
+          (sendButton as HTMLElement).click();
         }, 500);
       }
     }
