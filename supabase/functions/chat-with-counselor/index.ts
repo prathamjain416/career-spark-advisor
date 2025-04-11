@@ -20,62 +20,58 @@ serve(async (req) => {
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
       console.log("Invalid or missing Gemini API key. Using fallback response.");
-      return generateFallbackResponse(prompt, context, corsHeaders);
+      return generateFallbackResponse(prompt, corsHeaders);
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Prepare the conversation history
-    const messages = [
-      {
-        role: "system",
-        parts: [{text: `You are an expert career counselor for high school and college students in India. 
-        Provide specific, actionable guidance about education, careers, entrance exams, and academic paths.
-        Keep responses concise (maximum 3-4 paragraphs) but informative, focusing on practical advice for Indian students.
-        Include specific entrance exam names, college options in India, and career paths available in the Indian context when relevant.
-        Always provide comprehensive and thorough responses to ensure the user gets valuable guidance.`}]
-      }
-    ];
-
-    // Add conversation context if provided
-    if (context && Array.isArray(context)) {
-      messages.push(...context.map(msg => ({
-        role: msg.role,
-        parts: [{text: msg.content}]
-      })));
-    }
-
-    // Add the current user prompt
-    messages.push({
-      role: "user",
-      parts: [{text: prompt}]
-    });
-
-    console.log("Sending to Gemini:", messages);
-
-    // Call Gemini API
-    const result = await model.generateContent({
-      contents: messages,
+    // Create a chat session
+    const chat = model.startChat({
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 600
-      }
+      },
+      history: [
+        {
+          role: "user",
+          parts: [{ text: "You are an expert career counselor for high school and college students in India. Provide specific, actionable guidance about education, careers, entrance exams, and academic paths. Keep responses concise (maximum 3-4 paragraphs) but informative, focusing on practical advice for Indian students." }]
+        },
+        {
+          role: "model",
+          parts: [{ text: "I understand my role as an expert career counselor for Indian students. I'll provide concise, specific, and actionable guidance on education paths, careers, entrance exams, and academic choices relevant to the Indian context. My responses will be informative yet compact (3-4 paragraphs maximum), focusing on practical advice that students can implement. I'm ready to help with any career-related questions you have." }]
+        }
+      ]
     });
 
+    // Add conversation context if provided
+    if (context && Array.isArray(context)) {
+      for (const msg of context) {
+        if (msg.role === 'user') {
+          await chat.sendMessage({ role: "user", parts: [{ text: msg.content }] });
+        }
+      }
+    }
+
+    console.log("Sending to Gemini prompt:", prompt);
+
+    // Send the current user message and get response
+    const result = await chat.sendMessage(prompt);
     const aiResponseText = result.response.text() || "I'm sorry, I couldn't generate a response.";
+
+    console.log("Received from Gemini:", aiResponseText);
 
     return new Response(JSON.stringify({ message: aiResponseText }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error("Error:", error);
-    return generateFallbackResponse(prompt, context, corsHeaders);
+    return generateFallbackResponse(prompt, corsHeaders);
   }
 });
 
 // Function to generate fallback responses when Gemini API is unavailable
-function generateFallbackResponse(prompt, context, corsHeaders) {
+function generateFallbackResponse(prompt, corsHeaders) {
   console.log("Generating fallback response for prompt:", prompt);
   
   // Array of pre-defined career guidance responses

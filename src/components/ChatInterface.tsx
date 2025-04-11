@@ -15,6 +15,7 @@ const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0); // Track failed attempts
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -49,7 +50,6 @@ const ChatInterface = () => {
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setInputMessage("");
     setIsLoading(true);
-    setConnectionError(false);
 
     try {
       // Special handling for assessment result sharing
@@ -74,51 +74,96 @@ What specific aspects of ${inputMessage.includes("stream is") ? "your recommende
         
         setMessages(prevMessages => [...prevMessages, aiMessage]);
         setIsLoading(false);
+        setConnectionError(false); // Reset error state on success
+        setRetryCount(0); // Reset retry counter
         return;
       }
       
-      // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('chat-with-counselor', {
-        body: { 
-          prompt: inputMessage,
-          context: messages.slice(-6).map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.content }))
+      // Call the Supabase Edge Function with timeout and retry logic
+      const callWithTimeout = async (attempt: number = 1) => {
+        try {
+          // Set a timeout for the function call
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Request timed out")), 10000)
+          );
+          
+          const functionPromise = supabase.functions.invoke('chat-with-counselor', {
+            body: { 
+              prompt: inputMessage,
+              context: messages.slice(-4).map(m => ({ role: m.sender === 'user' ? 'user' : 'model', content: m.content }))
+            }
+          });
+          
+          // Race the function call against the timeout
+          const { data, error } = await Promise.race([functionPromise, timeoutPromise]) as any;
+          
+          if (error) {
+            throw error;
+          }
+          
+          // Use the response from the function
+          const aiMessage = { 
+            id: messages.length + 2, 
+            content: data.message || "I'm sorry, I couldn't generate a response at this time. Please try again.", 
+            sender: "ai" 
+          };
+          
+          setMessages(prevMessages => [...prevMessages, aiMessage]);
+          setConnectionError(false); // Reset error state on success
+          setRetryCount(0); // Reset retry counter
+          
+        } catch (error) {
+          console.error(`Attempt ${attempt} failed:`, error);
+          
+          // If we haven't exceeded max retries, try again
+          if (attempt < 2) {
+            console.log(`Retrying... (${attempt + 1}/2)`);
+            toast({
+              title: "Connection issue",
+              description: "Retrying connection...",
+              duration: 2000,
+            });
+            return callWithTimeout(attempt + 1);
+          }
+          
+          // If we've exhausted retries, handle the error
+          setConnectionError(true);
+          setRetryCount(prev => prev + 1);
+          
+          toast({
+            title: "Connection issue",
+            description: "Using offline mode. Your experience may be limited.",
+            variant: "destructive"
+          });
+          
+          // Fallback to predetermined responses
+          const aiResponses = [
+            "Based on your interests, you might want to explore careers in technology, particularly software development or data science.",
+            "Have you considered taking aptitude tests to better understand your strengths? I can guide you through some assessments.",
+            "For someone interested in healthcare, there are many paths besides medicine - like healthcare administration, public health, or medical research.",
+            "Engineering offers diverse specializations. Would you like to know more about computer, mechanical, or civil engineering?"
+          ];
+          
+          const aiMessage = { 
+            id: messages.length + 2, 
+            content: aiResponses[Math.floor(Math.random() * aiResponses.length)], 
+            sender: "ai" 
+          };
+          
+          setMessages(prevMessages => [...prevMessages, aiMessage]);
         }
-      });
-      
-      if (error) {
-        console.error("Error calling AI service:", error);
-        throw new Error(error.message);
-      }
-      
-      // Use the response from the function
-      const aiMessage = { 
-        id: messages.length + 2, 
-        content: data.message || "I'm sorry, I couldn't generate a response at this time. Please try again.", 
-        sender: "ai" 
       };
       
-      setMessages(prevMessages => [...prevMessages, aiMessage]);
+      await callWithTimeout();
+      
     } catch (error) {
-      console.error("Error getting AI response:", error);
+      console.error("Unexpected error in chat handling:", error);
+      // This catch block handles any errors not caught in the retry logic
       setConnectionError(true);
-      
-      toast({
-        title: "Connection issue",
-        description: "Using offline mode. Your experience may be limited.",
-        variant: "destructive"
-      });
-      
-      // Fallback to predetermined responses
-      const aiResponses = [
-        "Based on your interests, you might want to explore careers in technology, particularly software development or data science.",
-        "Have you considered taking aptitude tests to better understand your strengths? I can guide you through some assessments.",
-        "For someone interested in healthcare, there are many paths besides medicine - like healthcare administration, public health, or medical research.",
-        "Engineering offers diverse specializations. Would you like to know more about computer, mechanical, or civil engineering?"
-      ];
       
       const aiMessage = { 
         id: messages.length + 2, 
-        content: aiResponses[Math.floor(Math.random() * aiResponses.length)], 
+        content: "I'm experiencing technical difficulties. Please try again later or check your connection.", 
         sender: "ai" 
       };
       
@@ -181,6 +226,34 @@ What specific aspects of ${inputMessage.includes("stream is") ? "your recommende
   const clearChat = () => {
     setMessages([{ id: 1, content: "Hello! I'm your AI career counselor. How can I assist you with your career planning today? You can ask me about your assessment results or any career-related questions.", sender: "ai" }]);
     setConnectionError(false);
+    setRetryCount(0);
+  };
+
+  // Show different UI states based on connection status
+  const getConnectionStatus = () => {
+    if (connectionError) {
+      if (retryCount > 2) {
+        return (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md text-sm text-red-700 flex items-center justify-between">
+            <span>Connection issues persist. Try again later.</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs bg-red-50 hover:bg-red-100"
+              onClick={clearChat}
+            >
+              Reset Chat
+            </Button>
+          </div>
+        );
+      }
+      return (
+        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-700">
+          Currently in offline mode. Some features may be limited.
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -192,11 +265,7 @@ What specific aspects of ${inputMessage.includes("stream is") ? "your recommende
             <p className="text-muted-foreground">
               Ask questions about careers, entrance exams, or educational paths
             </p>
-            {connectionError && (
-              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-700">
-                Currently in offline mode. Some features may be limited.
-              </div>
-            )}
+            {getConnectionStatus()}
           </div>
           
           <Card className="border-2 shadow-md">
