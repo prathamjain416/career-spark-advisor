@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,16 +35,23 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
   const fetchSavedChats = async () => {
     try {
       setIsLoading(true);
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        throw sessionError;
+      }
+      
       const userId = sessionData?.session?.user?.id;
       
       if (!userId) {
-        throw new Error("You must be logged in to view saved conversations.");
+        setIsLoading(false);
+        setSavedChats([]);
+        return;
       }
 
       const { data, error } = await supabase
         .from('chat_logs')
-        .select('*')
+        .select('id, created_at, messages, user_id')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -51,17 +59,29 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
         throw error;
       }
 
-      const transformedData = data?.map((item: any) => ({
-        id: item.id,
-        created_at: item.created_at,
-        messages: Array.isArray(item.messages) 
-          ? item.messages 
-          : typeof item.messages === 'object' 
-            ? item.messages 
-            : []
-      })) || [];
+      // Process the message data and ensure it's in the correct format
+      const processedChats = data.map((chat: any) => {
+        // Ensure messages is an array
+        let messages;
+        
+        if (Array.isArray(chat.messages)) {
+          messages = chat.messages;
+        } else if (typeof chat.messages === 'object') {
+          // If it's a JSON object but not an array, try to extract an array
+          messages = Array.isArray(chat.messages) ? chat.messages : [];
+        } else {
+          // Default to empty array if we can't determine the structure
+          messages = [];
+        }
+        
+        return {
+          id: chat.id,
+          created_at: chat.created_at,
+          messages: messages
+        };
+      });
 
-      setSavedChats(transformedData);
+      setSavedChats(processedChats);
     } catch (error) {
       console.error("Error fetching saved chats:", error);
       toast({
