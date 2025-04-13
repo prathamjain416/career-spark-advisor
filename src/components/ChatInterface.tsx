@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
 import SavedChats from './SavedChats';
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sheet,
   SheetContent,
@@ -34,6 +35,7 @@ const ChatInterface = () => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -215,78 +217,81 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="py-12 bg-white" id="chat">
-      <div className="container px-4 md:px-6">
+    <div className="py-4 md:py-12 bg-white" id="chat">
+      <div className={`container ${isMobile ? 'px-2' : 'px-4 md:px-6'}`}>
         <div className="mx-auto max-w-3xl">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold tracking-tight mb-2">Chat with AI Career Counselor</h2>
-            <p className="text-muted-foreground">
+          <div className="text-center mb-4 md:mb-8">
+            <h2 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold tracking-tight mb-2`}>Chat with AI Career Counselor</h2>
+            <p className="text-muted-foreground text-sm md:text-base">
               Ask questions about careers, entrance exams, or educational paths
             </p>
             {getConnectionStatus()}
           </div>
           
           <Card className="border-2 shadow-md">
-            <CardHeader className="border-b bg-muted/50 p-4">
+            <CardHeader className="border-b bg-muted/50 p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Bot className="h-5 w-5 text-blue-600" />
-                  <CardTitle className="text-lg">AI Counselor</CardTitle>
+                  <CardTitle className="text-base lg:text-lg">AI Counselor</CardTitle>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 md:gap-2">
                   <Sheet>
                     <SheetTrigger asChild>
-                      <Button variant="outline" size="icon" className="relative">
+                      <Button variant="outline" size={isMobile ? "sm" : "icon"} className="relative">
                         <History className="h-4 w-4" />
+                        {!isMobile && <span className="sr-only">History</span>}
                       </Button>
                     </SheetTrigger>
-                    <SheetContent>
+                    <SheetContent className={isMobile ? "w-full" : "w-[400px] max-w-md"}>
                       <SheetHeader>
                         <SheetTitle>Saved Conversations</SheetTitle>
                         <SheetDescription>
                           View and manage your saved chat conversations.
                         </SheetDescription>
                       </SheetHeader>
-                      <div className="mt-6">
+                      <div className="mt-6 overflow-y-auto max-h-[80vh]">
                         <SavedChats onLoadChat={handleLoadChat} />
                       </div>
                     </SheetContent>
                   </Sheet>
-                  <Button variant="outline" size="icon" onClick={saveConversation} disabled={isSaving || messages.length <= 1}>
+                  <Button variant="outline" size={isMobile ? "sm" : "icon"} onClick={saveConversation} disabled={isSaving || messages.length <= 1}>
                     <Save className="h-4 w-4" />
+                    {isMobile && <span className="sr-only">Save</span>}
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={clearChat}>
+                  <Button variant="ghost" size={isMobile ? "sm" : "icon"} onClick={clearChat}>
                     <Trash className="h-4 w-4" />
+                    {isMobile && <span className="sr-only">Clear</span>}
                   </Button>
                 </div>
               </div>
-              <CardDescription>
+              <CardDescription className="text-xs md:text-sm">
                 Get personalized career advice and guidance
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div 
                 ref={chatContainerRef}
-                className="h-[400px] overflow-y-auto p-4 flex flex-col gap-4"
+                className={`${isMobile ? 'h-[350px]' : 'h-[400px]'} overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4`}
               >
                 {messages.map((message, index) => (
                   <div 
                     key={index} 
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2 md:mb-4`}
                   >
                     <div 
-                      className={`max-w-[80%] rounded-lg p-4 ${
+                      className={`max-w-[85%] rounded-lg p-3 ${
                         message.role === 'user' 
                           ? 'bg-blue-500 text-white' 
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
                       {message.role === 'bot' ? (
-                        <ReactMarkdown className="prose prose-sm max-w-none">
+                        <ReactMarkdown className="prose prose-sm max-w-none break-words">
                           {message.content}
                         </ReactMarkdown>
                       ) : (
-                        message.content
+                        <p className="break-words">{message.content}</p>
                       )}
                     </div>
                   </div>
@@ -309,16 +314,16 @@ const ChatInterface = () => {
                   </div>
                 )}
               </div>
-              <div className="border-t p-4">
+              <div className="border-t p-3 md:p-4">
                 <form onSubmit={handleSubmit} className="flex items-center gap-2">
                   <Input
                     ref={inputRef}
-                    placeholder="Ask about career options, exams, or educational paths..."
+                    placeholder={isMobile ? "Ask a question..." : "Ask about career options, exams, or educational paths..."}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     className="flex-1"
                   />
-                  <Button type="submit" size="icon" disabled={input.trim() === "" || isLoading}>
+                  <Button type="submit" size={isMobile ? "sm" : "icon"} disabled={input.trim() === "" || isLoading}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </form>
@@ -326,7 +331,7 @@ const ChatInterface = () => {
             </CardContent>
           </Card>
           
-          <div className="mt-4 text-sm text-center text-muted-foreground">
+          <div className="mt-4 text-xs md:text-sm text-center text-muted-foreground">
             <p>Example questions: "What career paths suit someone interested in biology?" or "How should I prepare for engineering entrance exams?"</p>
           </div>
         </div>

@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
@@ -12,6 +11,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SavedChat {
   id: string;
@@ -27,6 +27,7 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
   const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchSavedChats();
@@ -38,18 +39,26 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
+        console.error("Session error:", sessionError);
         throw sessionError;
       }
       
       const userId = sessionData?.session?.user?.id;
       
       if (!userId) {
+        console.log("No user ID found in session");
         setIsLoading(false);
         setSavedChats([]);
+        toast({
+          title: "Not logged in",
+          description: "Please log in to view your saved conversations.",
+          variant: "destructive"
+        });
         return;
       }
 
-      // Use a simpler query that doesn't involve complicated joins
+      console.log("Fetching saved chats for user:", userId);
+      
       const { data, error } = await supabase
         .from('chat_logs')
         .select('id, created_at, messages')
@@ -61,35 +70,36 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
         throw error;
       }
 
-      // Process the message data and ensure it's in the correct format
-      const processedChats = data.map((chat: any) => {
-        // Ensure messages is an array
-        let messages;
+      console.log("Raw data from DB:", data);
+
+      if (!data || !Array.isArray(data)) {
+        console.error("Unexpected data format:", data);
+        throw new Error("Unexpected data format returned from database");
+      }
+
+      const processedChats = data.map((chat) => {
+        let messages = [];
         
         try {
-          if (Array.isArray(chat.messages)) {
-            messages = chat.messages;
-          } else if (typeof chat.messages === 'object') {
-            // If it's a JSON object but not an array, try to extract an array
-            messages = Object.values(chat.messages).filter(Array.isArray)[0] || [];
-          } else if (typeof chat.messages === 'string') {
-            // Try to parse if it's a JSON string
+          if (typeof chat.messages === 'string') {
             messages = JSON.parse(chat.messages);
-          } else {
-            // Default to empty array if we can't determine the structure
-            messages = [];
+          } else if (Array.isArray(chat.messages)) {
+            messages = chat.messages;
+          } else if (chat.messages && typeof chat.messages === 'object') {
+            const possibleArrays = Object.values(chat.messages).filter(Array.isArray);
+            messages = possibleArrays.length > 0 ? possibleArrays[0] : [];
           }
         } catch (e) {
-          console.error("Error processing chat messages:", e);
+          console.error("Error processing chat messages for ID " + chat.id + ":", e);
           messages = [];
         }
 
-        // Ensure each message has the correct structure
-        const validMessages = Array.isArray(messages) ? 
-          messages.filter((msg: any) => 
-            msg && typeof msg === 'object' && 
-            ('content' in msg) && ('sender' in msg)
-          ) : [];
+        const validMessages = Array.isArray(messages) 
+          ? messages.filter(msg => 
+              msg && typeof msg === 'object' && 
+              'content' in msg && 'sender' in msg
+            )
+          : [];
         
         return {
           id: chat.id,
@@ -155,6 +165,7 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
         .eq('id', id);
 
       if (error) {
+        console.error("Error deleting chat:", error);
         throw error;
       }
 
@@ -195,14 +206,14 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${isMobile ? 'pb-16' : ''}`}>
       <Accordion type="single" collapsible className="w-full">
         {savedChats.map((chat) => (
-          <AccordionItem key={chat.id} value={chat.id}>
-            <AccordionTrigger className="hover:no-underline">
+          <AccordionItem key={chat.id} value={chat.id} className="border rounded-md mb-2">
+            <AccordionTrigger className="hover:no-underline px-4">
               <div className="flex items-start justify-between w-full pr-4">
                 <div className="text-left">
-                  <div className="font-medium">{getPreviewText(chat.messages)}</div>
+                  <div className="font-medium text-sm">{getPreviewText(chat.messages)}</div>
                   <div className="text-xs text-muted-foreground flex items-center mt-1">
                     <Clock className="h-3 w-3 mr-1" />
                     {formatDate(chat.created_at)}
@@ -211,7 +222,7 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-4 pt-2">
+              <div className="space-y-4 pt-2 px-4">
                 {chat.messages.slice(0, 3).map((message, idx) => (
                   <div key={idx} className={`p-3 rounded-lg ${
                     message.sender === 'user' 
@@ -237,11 +248,12 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
                   </p>
                 )}
                 
-                <div className="flex justify-between pt-2">
+                <div className="flex flex-wrap gap-2 justify-between pt-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => handleLoadChat(chat)}
+                    className="flex-1 min-w-[120px]"
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Load Conversation
