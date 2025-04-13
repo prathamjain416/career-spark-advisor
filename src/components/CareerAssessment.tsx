@@ -260,8 +260,8 @@ const CareerAssessment = () => {
             user_id: session.user.id,
             personality_type: determinePersonalityType(selectedTier, assessmentResults),
             result: formattedAnswers,
-            skills: assessmentType === 'class12' ? assessmentResults.recommendedDegrees?.map((d: any) => d.name) : null,
-            interests: assessmentType === 'class12' ? assessmentResults.careerPaths?.map((p: any) => p.name) : null
+            skills: selectedTier === 'class12' ? assessmentResults.recommendedDegrees?.map((d: any) => d.name) : null,
+            interests: selectedTier === 'class12' ? assessmentResults.careerPaths?.map((p: any) => p.name) : null
           });
 
         if (saveError) {

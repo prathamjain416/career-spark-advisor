@@ -43,17 +43,15 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Check for assessment results on mount and periodically
   useEffect(() => {
     const checkForResults = () => {
       const storedResults = localStorage.getItem('assessmentResults');
       if (storedResults) {
         try {
           const parsedResults = JSON.parse(storedResults);
-          // Check if it's the correct format
           if (parsedResults && parsedResults.message) {
             setMessages(prev => [...prev, { 
-              role: 'bot', 
+              role: 'bot' as const, 
               content: parsedResults.message 
             }]);
             localStorage.removeItem('assessmentResults');
@@ -64,10 +62,8 @@ const ChatInterface = () => {
       }
     };
 
-    // Check immediately
     checkForResults();
 
-    // Set up periodic checking
     const interval = setInterval(checkForResults, 1000); // Check every second
 
     return () => clearInterval(interval);
