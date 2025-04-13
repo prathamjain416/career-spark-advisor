@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,7 +51,17 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
         throw error;
       }
 
-      setSavedChats(data || []);
+      const transformedData = data?.map((item: any) => ({
+        id: item.id,
+        created_at: item.created_at,
+        messages: Array.isArray(item.messages) 
+          ? item.messages 
+          : typeof item.messages === 'object' 
+            ? item.messages 
+            : []
+      })) || [];
+
+      setSavedChats(transformedData);
     } catch (error) {
       console.error("Error fetching saved chats:", error);
       toast({
@@ -77,17 +86,14 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
   };
 
   const getPreviewText = (messages: { content: string; sender: string }[]) => {
-    // Find the last bot message to show as preview
     const lastBotMessage = [...messages].reverse().find(m => m.sender === 'model');
     if (lastBotMessage) {
-      // Return a truncated version of the message
       return lastBotMessage.content.substring(0, 60) + (lastBotMessage.content.length > 60 ? '...' : '');
     }
     return "No preview available";
   };
 
   const handleLoadChat = (chat: SavedChat) => {
-    // Transform the messages to match the format expected by ChatInterface
     const formattedMessages = chat.messages.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'bot',
       content: msg.content

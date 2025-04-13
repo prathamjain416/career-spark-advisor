@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,14 +49,13 @@ const ChatInterface = () => {
       const storedResults = localStorage.getItem('assessmentResults');
       if (storedResults) {
         try {
-          const { message, timestamp } = JSON.parse(storedResults);
-          // Only show results if they're from the last 5 minutes
-          const resultTime = new Date(timestamp);
-          const now = new Date();
-          const timeDiff = (now.getTime() - resultTime.getTime()) / (1000 * 60); // difference in minutes
-          
-          if (timeDiff < 5) {
-            setMessages(prev => [...prev, { role: 'bot', content: message }]);
+          const parsedResults = JSON.parse(storedResults);
+          // Check if it's the correct format
+          if (parsedResults && parsedResults.message) {
+            setMessages(prev => [...prev, { 
+              role: 'bot', 
+              content: parsedResults.message 
+            }]);
             localStorage.removeItem('assessmentResults');
           }
         } catch (error) {
@@ -185,7 +183,12 @@ const ChatInterface = () => {
   };
 
   const handleLoadChat = (loadedMessages: Message[]) => {
-    setMessages(loadedMessages);
+    const formattedMessages = loadedMessages.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'bot' as 'user' | 'bot',
+      content: msg.content
+    }));
+    
+    setMessages(formattedMessages);
   };
 
   const getConnectionStatus = () => {

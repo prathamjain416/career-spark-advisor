@@ -25,7 +25,7 @@ export const generateAssessmentResults = async (assessmentType: 'class10' | 'cla
           .insert({
             user_id: userId,
             result: results,
-            personality_type: personalityType,
+            personality_type: personalityType as "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic",
             skills: assessmentType === 'class12' ? results.recommendedDegrees?.map((d: any) => d.name) : null,
             interests: assessmentType === 'class12' ? results.careerPaths?.map((p: any) => p.name) : null
           });
@@ -243,9 +243,9 @@ function generateClass12Results(primaryInterest: string) {
   return careerMappings[primaryInterest] || careerMappings['Science'];
 }
 
-function determinePersonalityType(assessmentType: 'class10' | 'class12', results: any): string {
+function determinePersonalityType(assessmentType: 'class10' | 'class12', results: any): "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic" {
   if (assessmentType === 'class10') {
-    const streamToPersonalityMap: Record<string, string> = {
+    const streamToPersonalityMap: Record<string, "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic"> = {
       'Science': 'analytical',
       'Commerce': 'enterprising',
       'Arts': 'artistic',
@@ -253,7 +253,7 @@ function determinePersonalityType(assessmentType: 'class10' | 'class12', results
     };
     return streamToPersonalityMap[results.recommendedStream] || 'analytical';
   } else {
-    const careerToPersonalityMap: Record<string, string> = {
+    const careerToPersonalityMap: Record<string, "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic"> = {
       'Computer Science': 'analytical',
       'Engineering': 'analytical',
       'Business': 'enterprising',
@@ -265,8 +265,8 @@ function determinePersonalityType(assessmentType: 'class10' | 'class12', results
       'Law': 'enterprising'
     };
     
-    const careerOrDegree = results.recommendedDegrees?.[0]?.name || 'analytical';
-    let matchedPersonality = 'analytical';
+    const careerOrDegree = results.recommendedDegrees?.[0]?.name || '';
+    let matchedPersonality: "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic" = 'analytical';
     
     Object.entries(careerToPersonalityMap).forEach(([career, personality]) => {
       if (careerOrDegree.includes(career)) {
@@ -314,7 +314,6 @@ function getFallbackData(assessmentType: 'class10' | 'class12') {
     }
   }
 
-// Function to share results with chat
 export const shareResultsWithChat = (results: any, assessmentType: 'class10' | 'class12') => {
   try {
     // Format the results as a markdown message

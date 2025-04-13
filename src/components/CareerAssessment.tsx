@@ -152,7 +152,6 @@ const CareerAssessment = () => {
         description: "Please wait while we analyze your responses...",
       });
       
-      // Format answers for the assessment service
       const formattedAnswers = Object.entries(answers)
         .filter(([key]) => {
           const question = questions.find(q => q.id === parseInt(key));
@@ -163,10 +162,8 @@ const CareerAssessment = () => {
           answer: answer
         }));
       
-      // Generate assessment results
       const results = await generateAssessmentResults(selectedTier, formattedAnswers);
       
-      // Update state with results
       setAssessmentResults(results);
       setIsCompleted(true);
       
@@ -192,12 +189,10 @@ const CareerAssessment = () => {
     try {
       setIsLoading(true);
       
-      // Get the current user's session first
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw new Error("Failed to get user session");
       if (!session?.user) throw new Error("User not authenticated");
 
-      // Format the user's answers for the AI with actual option text
       const formattedAnswers = Object.entries(answers)
         .filter(([key]) => {
           const question = questions.find(q => q.id === parseInt(key));
@@ -236,9 +231,8 @@ const CareerAssessment = () => {
             answer: formattedAnswer
           };
         })
-        .filter(Boolean); // Remove any null entries
+        .filter(Boolean);
 
-      // Send assessment results to AI for personalized response
       const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chat-with-counselor', {
         body: { 
           prompt: `Please analyze these assessment results and provide personalized career guidance:
@@ -260,39 +254,33 @@ const CareerAssessment = () => {
       }
 
       try {
-        // Try to store the assessment results in Supabase
         const { error: saveError } = await supabase
-          .from('assessment_results')
+          .from('career_assessments')
           .insert({
             user_id: session.user.id,
-            assessment_type: selectedTier,
-            results: formattedAnswers,
-            ai_analysis: aiResponse.message,
-            created_at: new Date().toISOString()
+            personality_type: determinePersonalityType(selectedTier, assessmentResults),
+            result: formattedAnswers,
+            skills: assessmentType === 'class12' ? assessmentResults.recommendedDegrees?.map((d: any) => d.name) : null,
+            interests: assessmentType === 'class12' ? assessmentResults.careerPaths?.map((p: any) => p.name) : null
           });
 
         if (saveError) {
           console.warn('Failed to save to database:', saveError);
-          // Continue execution even if save fails
         }
       } catch (dbError) {
         console.warn('Database error:', dbError);
-        // Continue execution even if database operation fails
       }
 
-      // Store the AI response in localStorage to be picked up by the chat interface
       localStorage.setItem('assessmentResults', JSON.stringify({
         message: aiResponse.message,
         timestamp: new Date().toISOString()
       }));
 
-      // Navigate to the chat section
       const chatSection = document.getElementById('chat');
       if (chatSection) {
         chatSection.scrollIntoView({ behavior: 'smooth' });
       }
 
-      // Show success message
       toast({
         title: "Results Ready",
         description: "Your assessment results have been analyzed and shared in the chat.",
@@ -317,6 +305,41 @@ const CareerAssessment = () => {
     setTextAnswer('');
     setIsCompleted(false);
     setAssessmentResults(null);
+  };
+
+  const determinePersonalityType = (tier: 'class10' | 'class12', results: any): "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic" => {
+    if (tier === 'class10') {
+      const streamToPersonalityMap: Record<string, "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic"> = {
+        'Science': 'analytical',
+        'Commerce': 'enterprising',
+        'Arts': 'artistic',
+        'Humanities': 'social'
+      };
+      return streamToPersonalityMap[results.recommendedStream] || 'analytical';
+    } else {
+      const careerToPersonalityMap: Record<string, "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic"> = {
+        'Computer Science': 'analytical',
+        'Engineering': 'analytical',
+        'Business': 'enterprising',
+        'Finance': 'conventional',
+        'Arts': 'artistic',
+        'Design': 'artistic',
+        'Psychology': 'social',
+        'Medical': 'investigative',
+        'Law': 'enterprising'
+      };
+      
+      const careerOrDegree = results.recommendedDegrees?.[0]?.name || '';
+      let matchedPersonality: "analytical" | "creative" | "social" | "practical" | "investigative" | "artistic" | "enterprising" | "conventional" | "realistic" = 'analytical';
+      
+      Object.entries(careerToPersonalityMap).forEach(([career, personality]) => {
+        if (careerOrDegree.includes(career)) {
+          matchedPersonality = personality;
+        }
+      });
+      
+      return matchedPersonality;
+    }
   };
 
   const progressPercentage = Math.round(((Object.keys(answers).filter(key => 
