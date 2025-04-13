@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { BookOpen, Compass, BarChart, User, LogOut } from "lucide-react";
+import { BookOpen, Compass, BarChart, User, LogOut, MessageSquare } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import {
@@ -15,6 +16,10 @@ import {
 const Header = () => {
   const { user, signOut } = useAuth();
 
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b">
       <div className="container flex h-16 items-center justify-between">
@@ -24,12 +29,18 @@ const Header = () => {
         </div>
         
         <nav className="hidden md:flex items-center space-x-6">
-          <a href="#assessment" className="text-sm font-medium hover:text-blue-600 transition-colors">
+          <button 
+            onClick={() => scrollToSection('assessment')} 
+            className="text-sm font-medium hover:text-blue-600 transition-colors"
+          >
             Assessment
-          </a>
-          <a href="#chat" className="text-sm font-medium hover:text-blue-600 transition-colors">
+          </button>
+          <button 
+            onClick={() => scrollToSection('chat')} 
+            className="text-sm font-medium hover:text-blue-600 transition-colors"
+          >
             AI Counselor
-          </a>
+          </button>
         </nav>
         
         <div className="flex items-center space-x-4">
@@ -43,6 +54,11 @@ const Header = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => scrollToSection('chat')} className="cursor-pointer">
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  My Chats
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()} className="text-red-500 cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />

@@ -1,11 +1,21 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Send, Bot, Trash, Sparkles, Save } from "lucide-react";
+import { Send, Bot, Trash, Sparkles, Save, History } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
+import SavedChats from './SavedChats';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface Message {
   role: 'user' | 'bot';
@@ -174,6 +184,10 @@ const ChatInterface = () => {
     setRetryCount(0);
   };
 
+  const handleLoadChat = (loadedMessages: Message[]) => {
+    setMessages(loadedMessages);
+  };
+
   const getConnectionStatus = () => {
     if (connectionError) {
       if (retryCount > 2) {
@@ -201,7 +215,7 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="py-12 bg-white">
+    <div className="py-12 bg-white" id="chat">
       <div className="container px-4 md:px-6">
         <div className="mx-auto max-w-3xl">
           <div className="text-center mb-8">
@@ -220,6 +234,24 @@ const ChatInterface = () => {
                   <CardTitle className="text-lg">AI Counselor</CardTitle>
                 </div>
                 <div className="flex gap-2">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="icon" className="relative">
+                        <History className="h-4 w-4" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent>
+                      <SheetHeader>
+                        <SheetTitle>Saved Conversations</SheetTitle>
+                        <SheetDescription>
+                          View and manage your saved chat conversations.
+                        </SheetDescription>
+                      </SheetHeader>
+                      <div className="mt-6">
+                        <SavedChats onLoadChat={handleLoadChat} />
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                   <Button variant="outline" size="icon" onClick={saveConversation} disabled={isSaving || messages.length <= 1}>
                     <Save className="h-4 w-4" />
                   </Button>
