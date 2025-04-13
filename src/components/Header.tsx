@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { BookOpen, Compass, BarChart, User, LogOut } from "lucide-react";
@@ -30,9 +29,6 @@ const Header = () => {
           </a>
           <a href="#chat" className="text-sm font-medium hover:text-blue-600 transition-colors">
             AI Counselor
-          </a>
-          <a href="#careers" className="text-sm font-medium hover:text-blue-600 transition-colors">
-            Explore Careers
           </a>
         </nav>
         

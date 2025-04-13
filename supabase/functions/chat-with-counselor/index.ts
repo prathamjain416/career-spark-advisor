@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.9.0";
 
@@ -76,17 +75,149 @@ function generateFallbackResponse(prompt, corsHeaders) {
   
   // Array of pre-defined career guidance responses in Markdown format
   const fallbackResponses = [
-    "## Engineering Pathways\n\nBased on your interests, engineering might be a great path for you. Top engineering entrance exams in India include:\n- **JEE Main** - For NITs, IIITs, and GFTIs\n- **JEE Advanced** - For IITs\n- **BITSAT** - For BITS Pilani campuses\n\nI recommend starting preparation at least 1-2 years in advance with NCERT books as your foundation.",
-    
-    "## Medical Career Options\n\nFor medical aspirants, **NEET-UG** is the primary entrance exam in India. Besides MBBS, you might consider:\n- BDS (Bachelor of Dental Surgery)\n- BAMS (Ayurveda)\n- Allied health sciences\n\nFor preparation, focus on NCERT textbooks and solve previous years' papers.",
-    
-    "## Commerce & Business Pathways\n\nCommerce offers diverse career paths like:\n- **CA** - Register with ICAI and prepare for foundation exams\n- **CS** or **CMA** - Professional certifications\n- **MBA** - Aim for CAT, XAT, or NMAT after graduation\n\nTop colleges: DU, SRCC, and Christ University offer excellent BCom programs.",
-    
-    "## Humanities & Social Sciences\n\nIf you're interested in humanities or social sciences, consider these universities:\n- **Delhi University (DU)**\n- **JNU**\n- **Ashoka University**\n\nPrepare for CUET for admission to central universities. Career options include:\n- Civil services (UPSC)\n- Law (CLAT)\n- Journalism\n- Psychology",
-    
-    "## Computer Science & IT\n\nFor computer science careers, focus on building practical skills alongside your degree. Consider:\n- **BTech CSE** (through JEE)\n- **BCA** or **BSc Computer Science** programs\n\n### Skill Development\nDevelop coding skills through platforms like:\n- Coursera\n- edX\n- Codecademy",
-    
-    "## Choosing Your Stream (After 10th)\n\nWhen choosing a stream after 10th, consider your interests and aptitude rather than peer pressure.\n\n### Options:\n- **Science** - Opens doors to engineering, medicine, and research\n- **Commerce** - Pathways to business, finance, and economics\n- **Arts** - Leads to law, civil services, and creative fields\n\nRemember, your stream choice influences but doesn't completely determine your career options."
+    `## Engineering Pathways
+
+Based on your assessment responses, here's a detailed analysis:
+
+### Best Fit: Computer Science Engineering
+- **Why This Path?** Your analytical thinking and problem-solving skills make you well-suited for this field
+- **Core Skills Required:** Programming, Algorithms, Mathematics, Logical Thinking
+- **Future Opportunities:**
+  - Software Development
+  - Artificial Intelligence
+  - Cybersecurity
+  - Data Science
+- **Growth Potential:** High demand with 15-20% annual growth in tech sector
+- **Salary Range:** ₹6-15 LPA for freshers, up to ₹30-50 LPA with experience
+
+### Alternative Options:
+1. **Electronics Engineering**
+   - Focus on hardware and embedded systems
+   - Good for those interested in IoT and robotics
+   
+2. **Mechanical Engineering**
+   - Traditional engineering with diverse applications
+   - Strong in manufacturing and automotive sectors
+
+### Preparation Strategy:
+- Start with NCERT Physics, Chemistry, and Mathematics
+- Focus on JEE Main and Advanced preparation
+- Build programming skills through online courses
+- Participate in coding competitions
+
+### Top Colleges:
+- IITs (through JEE Advanced)
+- NITs (through JEE Main)
+- BITS Pilani (through BITSAT)
+- IIITs (through JEE Main)`,
+
+    `## Medical Career Path
+
+Based on your assessment responses, here's a detailed analysis:
+
+### Best Fit: MBBS (Bachelor of Medicine, Bachelor of Surgery)
+- **Why This Path?** Your interest in biology and helping others aligns well with this field
+- **Core Skills Required:** Biology, Chemistry, Patience, Communication
+- **Future Opportunities:**
+  - Clinical Practice
+  - Medical Research
+  - Public Health
+  - Specialization in various fields
+- **Growth Potential:** Steady demand with increasing healthcare needs
+- **Salary Range:** ₹8-12 LPA for freshers, up to ₹20-50 LPA with specialization
+
+### Alternative Options:
+1. **BDS (Dental Surgery)**
+   - Focus on oral health and dental care
+   - Shorter duration than MBBS
+   
+2. **BAMS/BHMS (Ayurveda/Homeopathy)**
+   - Alternative medicine paths
+   - Growing acceptance in healthcare
+
+### Preparation Strategy:
+- Focus on NCERT Biology and Chemistry
+- Prepare for NEET thoroughly
+- Develop strong communication skills
+- Gain exposure through hospital visits
+
+### Top Colleges:
+- AIIMS (through NEET)
+- Top Government Medical Colleges
+- Christian Medical College, Vellore
+- Armed Forces Medical College`,
+
+    `## Commerce & Business Path
+
+Based on your assessment responses, here's a detailed analysis:
+
+### Best Fit: Chartered Accountancy (CA)
+- **Why This Path?** Your analytical and numerical skills make you suitable for this field
+- **Core Skills Required:** Accounting, Taxation, Business Laws, Analysis
+- **Future Opportunities:**
+  - Corporate Finance
+  - Taxation
+  - Audit and Assurance
+  - Financial Consulting
+- **Growth Potential:** High demand in corporate sector
+- **Salary Range:** ₹6-10 LPA for freshers, up to ₹20-40 LPA with experience
+
+### Alternative Options:
+1. **Company Secretary (CS)**
+   - Focus on corporate laws and governance
+   - Growing importance in corporate sector
+   
+2. **BBA/MBA**
+   - General management path
+   - Diverse career opportunities
+
+### Preparation Strategy:
+- Focus on Mathematics and Economics
+- Develop strong analytical skills
+- Stay updated with business news
+- Build communication skills
+
+### Top Colleges:
+- ICAI for CA
+- ICSI for CS
+- Top B-Schools for MBA
+- Delhi University for B.Com`,
+
+    `## Arts & Humanities Path
+
+Based on your assessment responses, here's a detailed analysis:
+
+### Best Fit: Psychology
+- **Why This Path?** Your interest in human behavior and helping others
+- **Core Skills Required:** Communication, Empathy, Research, Analysis
+- **Future Opportunities:**
+  - Clinical Psychology
+  - Counseling
+  - Human Resources
+  - Research
+- **Growth Potential:** Increasing awareness of mental health
+- **Salary Range:** ₹4-8 LPA for freshers, up to ₹15-25 LPA with experience
+
+### Alternative Options:
+1. **Mass Communication**
+   - Focus on media and journalism
+   - Creative and dynamic field
+   
+2. **Social Work**
+   - Community development focus
+   - NGO and social sector opportunities
+
+### Preparation Strategy:
+- Focus on English and Social Sciences
+- Develop strong writing skills
+- Build communication abilities
+- Gain practical experience through internships
+
+### Top Colleges:
+- Delhi University
+- Tata Institute of Social Sciences
+- Christ University
+- Jamia Millia Islamia`
   ];
   
   // Simple keyword matching to attempt to provide relevant responses

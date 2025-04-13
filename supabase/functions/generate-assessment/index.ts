@@ -1,16 +1,21 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'http://localhost:8080',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400' // 24 hours
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', {
+      headers: corsHeaders,
+      status: 200
+    });
   }
 
   try {
@@ -27,28 +32,66 @@ serve(async (req) => {
 
     // Convert the answers into a structured prompt for Gemini
     const prompt = `
-    Based on the following career assessment responses, provide tailored educational and career guidance:
-    
+    Based on the following career assessment responses, provide detailed and personalized educational and career guidance:
+
     Assessment Type: ${assessmentType === 'class10' ? 'Class 10 Stream Selection' : 'Class 12 Career Planning'}
     
     Student Responses:
     ${answers.map(a => `- Question: ${a.question}\n  Answer: ${a.answer}`).join('\n')}
     
     ${assessmentType === 'class10' 
-      ? `Please provide the following:
-        1. Recommended Stream (Science, Commerce, Arts/Humanities)
-        2. Alternative Stream
-        3. Core Subjects for the recommended stream
-        4. Optional Subjects suggestions
-        5. Board Recommendations (CBSE, ICSE, State Board) with brief explanation` 
-      : `Please provide the following:
-        1. Three Recommended Undergraduate Degrees with brief descriptions
-        2. Three Suitable Career Paths with brief descriptions
-        3. Relevant Entrance Exams 
-        4. Four specific preparation tips for the recommended career path`
+      ? `Please provide a comprehensive analysis in the following format:
+        1. Best Stream Option:
+           - Stream Name
+           - Detailed explanation of why this stream is the best fit based on the student's responses
+           - Core subjects and their relevance to the student's interests
+           - Future career paths and opportunities
+           - Growth potential and industry trends
+         
+        2. Alternative Stream Option:
+           - Stream Name
+           - Brief explanation of why this could be a good alternative
+           - Key differences from the primary recommendation
+         
+        3. Detailed Analysis:
+           - Strengths and skills that align with the recommended stream
+           - Areas that need development
+           - Specific board recommendations (CBSE, ICSE, State Board) with reasoning
+           - Preparation tips and strategies
+         
+        4. Future Scope:
+           - Career opportunities after 12th
+           - Higher education options
+           - Industry trends and job market outlook
+           - Salary expectations and growth potential`
+      : `Please provide a comprehensive analysis in the following format:
+        1. Best Career Path:
+           - Degree/Course Name
+           - Detailed explanation of why this path is the best fit based on the student's responses
+           - Required skills and qualifications
+           - Future career opportunities
+           - Industry growth potential
+         
+        2. Alternative Career Paths:
+           - Two alternative options with brief descriptions
+           - Why these could be good alternatives
+           - Key differences from the primary recommendation
+         
+        3. Detailed Analysis:
+           - Strengths that align with the recommended path
+           - Areas that need development
+           - Required entrance exams and preparation strategies
+           - Top colleges and universities
+         
+        4. Future Scope:
+           - Career progression path
+           - Higher education options
+           - Industry trends and job market outlook
+           - Salary expectations and growth potential
+           - Required certifications and skills development`
     }
     
-    Format the response as a JSON object with exactly the structure described above.`;
+    Format the response as a JSON object with exactly the structure described above. Ensure the analysis is personalized based on the student's responses and provides actionable insights.`;
 
     try {
       console.log('Sending request to Gemini API');
