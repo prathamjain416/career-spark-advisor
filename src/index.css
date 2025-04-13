@@ -94,13 +94,43 @@
   animation: fade-in-up 0.5s ease-out forwards;
 }
 
+/* Responsive utilities */
+.responsive-container {
+  @apply w-full px-4 md:px-6 lg:px-8 mx-auto;
+  max-width: calc(100vw - 2rem);
+}
+
+@screen sm {
+  .responsive-container {
+    max-width: 640px;
+  }
+}
+
+@screen md {
+  .responsive-container {
+    max-width: 768px;
+  }
+}
+
+@screen lg {
+  .responsive-container {
+    max-width: 1024px;
+  }
+}
+
+@screen xl {
+  .responsive-container {
+    max-width: 1280px;
+  }
+}
+
 /* Custom styles */
 .gradient-text {
   @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400;
 }
 
 .chat-bubble {
-  @apply p-4 rounded-lg max-w-[80%];
+  @apply p-3 sm:p-4 rounded-lg max-w-[80%];
 }
 
 .chat-bubble-ai {
@@ -109,6 +139,29 @@
 
 .chat-bubble-user {
   @apply bg-blue-500 text-white ml-auto;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .mobile-full-width {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .mobile-smaller-text {
+    font-size: 0.875rem;
+  }
+  
+  .mobile-smaller-padding {
+    padding: 0.75rem;
+  }
+  
+  .mobile-stack {
+    flex-direction: column;
+  }
 }
 
 .typing-indicator {
@@ -144,5 +197,33 @@
   }
   40% {
     transform: scale(1);
+  }
+}
+
+/* Add these custom styles for better chat experience on different devices */
+.chat-container {
+  @apply flex flex-col;
+  height: calc(100vh - 200px);
+}
+
+@media (max-width: 768px) {
+  .chat-container {
+    height: calc(100vh - 160px);
+  }
+}
+
+/* Responsive Card Styles */
+.responsive-card {
+  @apply w-full transition-all duration-300;
+}
+
+/* Sidebar responsiveness */
+.sidebar-toggle {
+  @apply fixed z-40 bottom-20 left-4 md:hidden bg-white shadow-md rounded-full p-2;
+}
+
+@media (min-width: 768px) {
+  .sidebar-toggle {
+    display: none;
   }
 }
