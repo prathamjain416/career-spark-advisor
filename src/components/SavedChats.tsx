@@ -49,13 +49,15 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
         return;
       }
 
+      // Use a simpler query that doesn't involve complicated joins
       const { data, error } = await supabase
         .from('chat_logs')
-        .select('id, created_at, messages, user_id')
+        .select('id, created_at, messages')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error("Database query error:", error);
         throw error;
       }
 
@@ -64,29 +66,45 @@ const SavedChats: React.FC<SavedChatsProps> = ({ onLoadChat }) => {
         // Ensure messages is an array
         let messages;
         
-        if (Array.isArray(chat.messages)) {
-          messages = chat.messages;
-        } else if (typeof chat.messages === 'object') {
-          // If it's a JSON object but not an array, try to extract an array
-          messages = Array.isArray(chat.messages) ? chat.messages : [];
-        } else {
-          // Default to empty array if we can't determine the structure
+        try {
+          if (Array.isArray(chat.messages)) {
+            messages = chat.messages;
+          } else if (typeof chat.messages === 'object') {
+            // If it's a JSON object but not an array, try to extract an array
+            messages = Object.values(chat.messages).filter(Array.isArray)[0] || [];
+          } else if (typeof chat.messages === 'string') {
+            // Try to parse if it's a JSON string
+            messages = JSON.parse(chat.messages);
+          } else {
+            // Default to empty array if we can't determine the structure
+            messages = [];
+          }
+        } catch (e) {
+          console.error("Error processing chat messages:", e);
           messages = [];
         }
+
+        // Ensure each message has the correct structure
+        const validMessages = Array.isArray(messages) ? 
+          messages.filter((msg: any) => 
+            msg && typeof msg === 'object' && 
+            ('content' in msg) && ('sender' in msg)
+          ) : [];
         
         return {
           id: chat.id,
           created_at: chat.created_at,
-          messages: messages
+          messages: validMessages
         };
       });
 
+      console.log("Processed chats:", processedChats);
       setSavedChats(processedChats);
     } catch (error) {
       console.error("Error fetching saved chats:", error);
       toast({
         title: "Error",
-        description: "Failed to load your saved conversations.",
+        description: "Failed to load your saved conversations. Please try again later.",
         variant: "destructive"
       });
     } finally {
