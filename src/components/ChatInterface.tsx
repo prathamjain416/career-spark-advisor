@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,7 +102,7 @@ const ChatInterface = () => {
 
       if (error) throw error;
 
-      const aiMessage = { 
+      const aiMessage: Message = { 
         role: 'bot', 
         content: data.message || "I'm sorry, I couldn't generate a response at this time. Please try again." 
       };
