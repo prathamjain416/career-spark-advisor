@@ -35,12 +35,7 @@ const Header = () => {
           >
             Assessment
           </button>
-          <button 
-            onClick={() => scrollToSection('chat')} 
-            className="text-sm font-medium hover:text-blue-600 transition-colors"
-          >
-            AI Counselor
-          </button>
+          {/* Chat section link removed */}
         </nav>
         
         <div className="flex items-center space-x-4">
@@ -55,10 +50,7 @@ const Header = () => {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => scrollToSection('chat')} className="cursor-pointer">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  My Chats
-                </DropdownMenuItem>
+                {/* My Chats item removed */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()} className="text-red-500 cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />

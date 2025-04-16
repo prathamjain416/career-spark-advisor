@@ -1,21 +1,13 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Send, Bot, Trash, Sparkles, Save, History } from "lucide-react";
+import { Send, Bot, Trash, Sparkles } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
-import SavedChats from './SavedChats';
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 
 interface Message {
   role: 'user' | 'bot';
@@ -28,7 +20,6 @@ const ChatInterface = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -125,69 +116,10 @@ const ChatInterface = () => {
     }
   };
 
-  const saveConversation = async () => {
-    if (messages.length <= 1) {
-      toast({
-        title: "Nothing to save",
-        description: "Please have a conversation before saving.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-      
-      if (!userId) {
-        throw new Error("You must be logged in to save conversations.");
-      }
-
-      const { error } = await supabase
-        .from('chat_logs')
-        .insert({
-          user_id: userId,
-          messages: messages.map(m => ({
-            content: m.content,
-            sender: m.role === 'user' ? 'user' : 'model'
-          }))
-        });
-
-      if (error) {
-        console.error("Error details:", error);
-        throw error;
-      }
-
-      toast({
-        title: "Conversation saved",
-        description: "Your conversation has been saved for future reference.",
-      });
-    } catch (error) {
-      console.error("Error saving conversation:", error);
-      toast({
-        title: "Save failed",
-        description: "There was a problem saving your conversation. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const clearChat = () => {
     setMessages([{ role: 'bot', content: "Hello! I'm your AI career counselor. How can I assist you with your career planning today?" }]);
     setConnectionError(false);
     setRetryCount(0);
-  };
-
-  const handleLoadChat = (loadedMessages: Message[]) => {
-    const formattedMessages = loadedMessages.map(msg => ({
-      role: msg.role === 'user' ? 'user' : 'bot' as 'user' | 'bot',
-      content: msg.content
-    }));
-    
-    setMessages(formattedMessages);
   };
 
   const getConnectionStatus = () => {
@@ -236,29 +168,7 @@ const ChatInterface = () => {
                   <CardTitle className="text-base lg:text-lg">AI Counselor</CardTitle>
                 </div>
                 <div className="flex gap-1 md:gap-2">
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="outline" size={isMobile ? "sm" : "icon"} className="relative">
-                        <History className="h-4 w-4" />
-                        {!isMobile && <span className="sr-only">History</span>}
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent className={isMobile ? "w-full" : "w-[400px] max-w-md"}>
-                      <SheetHeader>
-                        <SheetTitle>Saved Conversations</SheetTitle>
-                        <SheetDescription>
-                          View and manage your saved chat conversations.
-                        </SheetDescription>
-                      </SheetHeader>
-                      <div className="mt-6 overflow-y-auto max-h-[80vh]">
-                        <SavedChats onLoadChat={handleLoadChat} />
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                  <Button variant="outline" size={isMobile ? "sm" : "icon"} onClick={saveConversation} disabled={isSaving || messages.length <= 1}>
-                    <Save className="h-4 w-4" />
-                    {isMobile && <span className="sr-only">Save</span>}
-                  </Button>
+                  {/* Save and History buttons removed */}
                   <Button variant="ghost" size={isMobile ? "sm" : "icon"} onClick={clearChat}>
                     <Trash className="h-4 w-4" />
                     {isMobile && <span className="sr-only">Clear</span>}
